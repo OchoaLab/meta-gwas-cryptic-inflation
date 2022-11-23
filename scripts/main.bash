@@ -9,6 +9,7 @@ ln -s $ORIG/data.bed data.bed
 ln -s $ORIG/data.bim data.bim
 ln -s $ORIG/data.fam data.fam
 ln -s $ORIG/data.phen data.phen
+ln -s $ORIG/simtrait.RData simtrait.RData
 
 # use plink to filter the raw data
 cd ../data/rep-1/
