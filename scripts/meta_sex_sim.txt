@@ -1,0 +1,25 @@
+# Describe and process the input files
+MARKER   SNP
+WEIGHT   518
+ALLELE   A1 A2
+FREQ     Freq
+EFFECT   b
+STDERR   se
+PVAL     p
+
+PROCESS /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/allele_freq/newfiles_alpha/imputation_10_new/results/sex_stratified/data/rep-1/females.mlma
+
+# Describe and process the input files
+MARKER   SNP
+WEIGHT   482
+ALLELE   A1 A2
+FREQ     Freq
+EFFECT   b
+STDERR   se
+PVAL     p
+
+PROCESS /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/allele_freq/newfiles_alpha/imputation_10_new/results/sex_stratified/data/rep-1/males.mlma
+
+# Execute meta-analysis
+OUTFILE METAANALYSIS_sim .tbl
+ANALYZE
