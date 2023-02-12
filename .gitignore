@@ -44,3 +44,4 @@ rep-*/
 #*.pre
 *.snm
 #*.vrb
+.DS_Store
