@@ -1,7 +1,7 @@
 
 # make link to existing data from pca-assoc project
 # use 20-generation admixed family, first replicate!
-ORIG=../../../pca-assoc-paper/data/sim-n1000-k10-f0.1-s0.5-g20/rep-1
+ORIG=../../../obs/pca-assoc-paper/data/sim-n1000-k10-f0.1-s0.5-g20/rep-1
 cd ../data/
 mkdir rep-1
 cd rep-1
