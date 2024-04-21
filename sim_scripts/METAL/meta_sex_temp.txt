@@ -23,7 +23,7 @@ PVAL     p.value
 PROCESS INPUT_PLACEHOLDER_2.txt
 
 # Weight Command
-WEIGHT 1.0 1.0 1.0
+WEIGHT 1.0 1.0
 
 # Execute meta-analysis
 OUTFILE OUTPUT_PLACEHOLDER .txt
