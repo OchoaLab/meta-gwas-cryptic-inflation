@@ -11,7 +11,7 @@ opt <- parse_args(opt_parser)
 # get values
 rep_num <- opt$num # '1'
 
-setwd('/datacommons/ochoalab/tiffany_data/meta_analysis_aim/sim2/')
+setwd('/hpc/group/ochoalab/tt207/meta_analysis_aim/sim2_h08/')
 new_dir <- paste0('rep', rep_num)
 dir.create(new_dir)
 setwd(new_dir)

@@ -10,7 +10,7 @@ opt <- parse_args(opt_parser)
 # get values
 rep_num <- opt$num # '1'
 
-setwd(paste0('/datacommons/ochoalab/tiffany_data/meta_analysis_aim/sim4/rep', rep_num))
+setwd(paste0('/hpc/group/ochoalab/tt207/meta_analysis_aim/sim4_h08/rep', rep_num))
 
 # sim 4 : 1 single population, with family relatedness
 n = 3000

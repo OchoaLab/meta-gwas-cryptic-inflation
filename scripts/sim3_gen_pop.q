@@ -2,7 +2,7 @@
 #SBATCH -p ochoalab --account=ochoalab
 #SBATCH --job-name=sim3
 #SBATCH --output=sim3_%a.out
-#SBATCH --array=3-4
+#SBATCH --array=1-20
 #SBATCH --mem=140G
 #SBATCH --ntasks-per-node=60
 #SBATCH --mail-user=tiffany.tu@duke.edu

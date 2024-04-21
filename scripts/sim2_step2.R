@@ -14,7 +14,7 @@ opt_parser <- OptionParser(option_list = option_list)
 opt <- parse_args(opt_parser)
 # get values
 rep_num <- opt$num # '1'
-setwd(paste0('/datacommons/ochoalab/tiffany_data/meta_analysis_aim/sim2/rep', rep_num, "/subpop"))
+setwd(paste0('/hpc/group/ochoalab/tt207/meta_analysis_aim/sim2_h08/rep', rep_num, "/subpop"))
 
 # sim 3 : 3 subpopulations, admixture within subpopulations 
 # run loop for each pop, simulate separately
@@ -26,12 +26,12 @@ G = 30
 
 for (x in 1:subpop){
   ## pedigree data
-  fam = read.table(paste0('/datacommons/ochoalab/tiffany_data/meta_analysis_aim/sim2/rep', rep_num, '/subpop/pedigree_fam_30G_S', x, ".txt"), header = TRUE)
-  load(paste0('/datacommons/ochoalab/tiffany_data/meta_analysis_aim/sim2/rep', rep_num, '/subpop/pedigree_ids_30G_S', x, ".RData"))
+  fam = read.table(paste0('/hpc/group/ochoalab/tt207/meta_analysis_aim/sim2_h08/rep', rep_num, '/subpop/pedigree_fam_30G_S', x, ".txt"), header = TRUE)
+  load(paste0('/hpc/group/ochoalab/tt207/meta_analysis_aim/sim2_h08/rep', rep_num, '/subpop/pedigree_ids_30G_S', x, ".RData"))
 
   # draw genotypes X through pedigree
   # read X genotype file from sim1 (first generation)
-  plink_file = paste0('/datacommons/ochoalab/tiffany_data/meta_analysis_aim/sim1/rep', rep_num, '/subpop/1G_3000n_100causal_500000m_S', x)
+  plink_file = paste0('/hpc/group/ochoalab/tt207/meta_analysis_aim/sim1_h08/rep', rep_num, '/subpop/1G_3000n_100causal_500000m_S', x)
   plink = read_plink(plink_file)
   X_1 = plink$X
   X_famid = plink$fam$fam
@@ -52,7 +52,7 @@ for (x in 1:subpop){
            mat = ifelse(is.na(mat) == TRUE, NA, paste0(mat_group, "-", mat))) %>% select(-group, -mat_group, -pat_group)
   
   print(paste('write fam file for subpop', x))
-  write.table(new_fam, paste0('/datacommons/ochoalab/tiffany_data/meta_analysis_aim/sim2/rep', rep_num, '/subpop/pedigree_fam_30G_S', x, "_new.txt"),
+  write.table(new_fam, paste0('/hpc/group/ochoalab/tt207/meta_analysis_aim/sim2_h08/rep', rep_num, '/subpop/pedigree_fam_30G_S', x, "_new.txt"),
               col.names = TRUE, row.names = FALSE, quote = FALSE)
   
   # update id's to reflect subpop
@@ -74,7 +74,7 @@ for (x in 1:subpop){
   new_ids <- lapply(ids, increment_suffixes, x)
   
   print(paste('write fam ids file for subpop', x))
-  save( new_ids, file = paste0('/datacommons/ochoalab/tiffany_data/meta_analysis_aim/sim2/rep', rep_num, '/subpop/pedigree_ids_30G_S', x, "_new.RData")) 
+  save( new_ids, file = paste0('/hpc/group/ochoalab/tt207/meta_analysis_aim/sim2_h08/rep', rep_num, '/subpop/pedigree_ids_30G_S', x, "_new.RData")) 
   
   fam <- prune_fam( new_fam, new_ids[[G]] )
   
@@ -87,7 +87,7 @@ for (x in 1:subpop){
   # generate last generation
   print("generate last generation X_G")
   
-  name_out <- paste0('/datacommons/ochoalab/tiffany_data/meta_analysis_aim/sim2/rep', rep_num, '/subpop/30G_3000n_100causal_500000m_S', x)
+  name_out <- paste0('/hpc/group/ochoalab/tt207/meta_analysis_aim/sim2_h08/rep', rep_num, '/subpop/30G_3000n_100causal_500000m_S', x)
   m_loci = 500000
   
   ## NEW version that is a bit more memory efficient

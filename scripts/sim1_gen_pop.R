@@ -15,8 +15,8 @@ opt <- parse_args(opt_parser)
 # get values
 rep_num <- opt$num # '1'
 
-source("/datacommons/ochoalab/tiffany_data/meta_analysis_aim/make_corr_psi_tree.R")
-setwd('/datacommons/ochoalab/tiffany_data/meta_analysis_aim/sim1')
+source("/hpc/group/ochoalab/tt207/meta_analysis_aim/make_corr_psi_tree.R")
+setwd('/hpc/group/ochoalab/tt207/meta_analysis_aim/sim1_h08')
 
 new_dir <- paste0('rep', rep_num)
 dir.create(new_dir)
@@ -111,12 +111,13 @@ p_ind <- out$p_ind
 
 ##### draw trait
 m_causal <- 100
-herit <- 0.6
+herit <- 0.8
 data_trait <- sim_trait_env(
   X,
   out$p_anc,
   m_causal,
   herit,
+  fes = TRUE,
   env = 'gcat',
   k_subpops = k_subpops
 )
@@ -133,7 +134,7 @@ write_plink("1G_3000n_100causal_500000m", X, fam = fam_new)
 
 # write covar
 covar_file = cbind(fam$fam, fam$id, sex, trait) %>% as.data.frame() %>% dplyr::rename(famid = V1, iid = V2)
-write.table(covar_file, "1G_covar_3000n_100causal_500000m", col.names = TRUE, row.names = FALSE, quote = FALSE)
+write.table(covar_file, "1G_covar_3000n_100causal_500000m.txt", col.names = TRUE, row.names = FALSE, quote = FALSE)
 
 # write other files for generating future generations
 # admix proportions = Q 

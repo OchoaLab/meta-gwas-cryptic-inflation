@@ -15,7 +15,7 @@ opt <- parse_args(opt_parser)
 # get values
 rep_num <- opt$num # '1'
 
-setwd(paste0('/datacommons/ochoalab/tiffany_data/meta_analysis_aim/sim4/rep', rep_num))
+setwd(paste0('/hpc/group/ochoalab/tt207/meta_analysis_aim/sim4_h08/rep', rep_num))
 
 # sim 4: 1 populations, admixture across subpopulations
 n = 3000
@@ -28,7 +28,7 @@ load("pedigree_ids_30G.RData")
 
 
 # draw genotypes X through pedigree
-# read X genotype file from sim1 (first generation)
+# read X genotype file from (first generation)
 plink = read_plink("1G_3000n_100causal_500000m")
 X_1 = plink$X
 X_famid = plink$fam$fam

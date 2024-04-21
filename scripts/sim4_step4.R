@@ -15,7 +15,7 @@ opt <- parse_args(opt_parser)
 # get values
 rep_num <- opt$num # '1'
 
-setwd(paste0('/datacommons/ochoalab/tiffany_data/meta_analysis_aim/sim4/rep', rep_num))
+setwd(paste0('/hpc/group/ochoalab/tt207/meta_analysis_aim/sim4_h08/rep', rep_num))
 
 print('start step 4')
 ##### draw trait
@@ -26,7 +26,7 @@ dim(plink$X)
 X_G = plink$X
 fam_G = plink$fam
 # ancestral allele freq from first generation
-p_anc = read.table('1G_p_anc_3000n_100causal_500000m.txt', header = TRUE) %>% pull(x)
+#p_anc = read.table('1G_p_anc_3000n_100causal_500000m.txt', header = TRUE) %>% pull(x)
 
 ## pedigree data
 # read fam/fam id
@@ -35,7 +35,7 @@ load("pedigree_ids_30G.RData")
 
 ##### draw trait
 m_causal <- 100
-herit <- 0.6
+herit <- 0.8
 k_subpops <- 1
 ### draw trait for last generation? with ancestral af.
 print("draw trait")
@@ -44,8 +44,8 @@ data_trait <- sim_trait_env(
   p_anc,
   m_causal,
   herit,
-  env = NA, # gcat or no env??
-  k_subpops = NA
+  k_subpops = NA,
+  fes = TRUE
 )
 
 ##### calculate kinship and expected admixture proportions
@@ -60,7 +60,6 @@ inbr_subpops <- 1 : k_subpops
 # NOTE fst is a function in the `popkin` package
 inbr_subpops <- inbr_subpops / fst(inbr_subpops) * Fst
 ## coancestry
-#coancestry <- coanc_admix(admix_proportions_1, inbr_subpops)
 
 coancestry <- tcrossprod(admix_proportions_1) * inbr_subpops
 print('coancestry calculated')
@@ -79,13 +78,13 @@ rownames(admix_proportions_1) <- ids[[1]]
 #table(fam_G$pheno)
 # covar
 covar_file = cbind(fam_G$fam, fam_G$id, fam_G$sex, data_trait$trait) %>% as.data.frame() %>% dplyr::rename(famid = V1, iid = V2, sex = V3, trait = V4)
-write.table(covar_file, "30G_covar_3000n_100causal_500000m.txt", col.names = TRUE, row.names = FALSE, quote = FALSE)
+write.table(covar_file, "30G_covar_3000n_100causal_500000m_fes.txt", col.names = TRUE, row.names = FALSE, quote = FALSE)
 # causal indices
-write.table(data_trait$causal_indexes, "30G_causal_id_3000n_100causal_500000m.txt", col.names = TRUE, row.names = FALSE, quote = FALSE)
+write.table(data_trait$causal_indexes, "30G_causal_id_3000n_100causal_500000m_fes.txt", col.names = TRUE, row.names = FALSE, quote = FALSE)
 # causal coeff
-write.table(data_trait$causal_coeffs, "30G_causal_coeff_3000n_100causal_500000m.txt", col.names = TRUE, row.names = FALSE, quote = FALSE)
+write.table(data_trait$causal_coeffs, "30G_causal_coeff_3000n_100causal_500000m_fes.txt", col.names = TRUE, row.names = FALSE, quote = FALSE)
 # admixture proportions of last gen
-#write.table(admix_proportions_G, "/datacommons/ochoalab/tiffany_data/meta_analysis_aim/sim4/30G_admix_proportions_G_3000n_100causal_500000m.txt", sep = " ", col.names = TRUE, row.names = FALSE)
-# kinship of last gen
+#write.table(admix_proportions_G, "30G_admix_proportions_G_3000n_100causal_500000m.txt", sep = " ", col.names = TRUE, row.names = FALSE)
+#kinship of last gen
 genio::write_grm("30G_kinship_G_3000n_100causal_500000m", kinship_G)
 
