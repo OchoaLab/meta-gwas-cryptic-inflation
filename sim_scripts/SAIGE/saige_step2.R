@@ -1,7 +1,7 @@
 library(SAIGE)
 library(optparse) 
 
-dir = "/datacommons/ochoalab/tiffany_data/meta_analysis_aim/"
+dir = "/hpc/group/ochoalab/tt207/meta_analysis_aim/"
 
 # terminal inputs
 option_list = list(
@@ -30,7 +30,7 @@ if (analysis != 'all') {
     plinkFile = paste0(dir, simulation, '/rep', rep_num, "/sex/", filename)
     GMMATmodelFile = paste0(dir, simulation, '/rep', rep_num, '/sex/saige_binary_', filename, ".rda") 
     varianceRatioFile = paste0(dir, simulation, '/rep', rep_num, '/sex/saige_binary_', filename,".varianceRatio.txt") 
-    SAIGEOutputFile = paste0(dir, simulation, '/rep', rep_num, '/sex/saige_output_', filename, '.txt') 
+    SAIGEOutputFile = paste0(dir, simulation, '/rep', rep_num, '/sex/saige_output_', filename, '_new.txt') 
     
   } else { # subpop
     plinkFile = paste0(dir, simulation, '/rep', rep_num, "/subpop/", filename)
@@ -43,7 +43,7 @@ if (analysis != 'all') {
     plinkFile = paste0(dir, simulation, '/rep', rep_num, "/", filename)
     GMMATmodelFile = paste0(dir, simulation, '/rep', rep_num, '/saige_binary.rda') 
     varianceRatioFile = paste0(dir, simulation, '/rep', rep_num, "/saige_binary.varianceRatio.txt") 
-    SAIGEOutputFile = paste0(dir, simulation, '/rep', rep_num, "/saige_output.txt") 
+    SAIGEOutputFile = paste0(dir, simulation, '/rep', rep_num, "/saige_output_new.txt") 
 }
   
 

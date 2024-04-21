@@ -1,7 +1,7 @@
 library(SAIGE)
 library(optparse) 
 
-dir = "/datacommons/ochoalab/tiffany_data/meta_analysis_aim/"
+dir = "/hpc/group/ochoalab/tt207/meta_analysis_aim/"
 
 # terminal inputs
 option_list = list(
@@ -32,18 +32,18 @@ print(analysis)
 if (analysis != 'all') {
   if (analysis == "sex") {
     plinkFile = paste0(dir, simulation, '/rep', rep_num, "/sex/", filename)
-    phenoFile= paste0(dir, simulation, '/rep', rep_num, '/sex/covar_saige_', filename, '.txt')
+    phenoFile= paste0(dir, simulation, '/rep', rep_num, '/sex/covar_saige_', filename, '_fes.txt')
     outputPrefix= paste0(dir, simulation, '/rep', rep_num, '/sex/saige_binary_', filename) 
-    covars=c("PCs.1","PCs.2","PCs.3","PCs.4","PCs.5","PCs.6","PCs.7","PCs.8","PCs.9","PCs.10")
-    qcovars = NULL
+    covars=c('famid', "PCs.1","PCs.2","PCs.3","PCs.4","PCs.5","PCs.6","PCs.7","PCs.8","PCs.9","PCs.10")
+    qcovars = "famid"
 
     
   } else {
     # subpop
     plinkFile = paste0(dir, simulation, '/rep', rep_num, "/subpop/", filename)
-    phenoFile= paste0(dir, simulation, '/rep', rep_num, '/subpop/covar_saige_', filename, '.txt')
+    phenoFile= paste0(dir, simulation, '/rep', rep_num, '/subpop/covar_saige_', filename, '_fes.txt')
     outputPrefix= paste0(dir, simulation,'/rep', rep_num,  '/subpop/saige_binary_', filename) 
-    covars=c('sex',"PCs.1","PCs.2","PCs.3","PCs.4","PCs.5","PCs.6","PCs.7","PCs.8","PCs.9","PCs.10")
+    covars=c('sex', "PCs.1","PCs.2","PCs.3","PCs.4","PCs.5","PCs.6","PCs.7","PCs.8","PCs.9","PCs.10")
     # categorical
     qcovars='sex'
   }
@@ -51,12 +51,12 @@ if (analysis != 'all') {
 } else {
   # else: main analysis (all individuals) 
   plinkFile = paste0(dir, simulation,'/rep', rep_num, "/", filename)
-  phenoFile= paste0(dir, simulation,'/rep', rep_num, '/covar_saige_', filename, '.txt')
+  phenoFile= paste0(dir, simulation,'/rep', rep_num, '/covar_saige_', filename, '_fes.txt')
   outputPrefix= paste0(dir, simulation,'/rep', rep_num, '/saige_binary') 
   # covariates for main + conditional 
-  covars=c('sex',"PCs.1","PCs.2","PCs.3","PCs.4","PCs.5","PCs.6","PCs.7","PCs.8","PCs.9","PCs.10")
+  covars=c('sex', 'famid', "PCs.1","PCs.2","PCs.3","PCs.4","PCs.5","PCs.6","PCs.7","PCs.8","PCs.9","PCs.10")
   # categorical
-  qcovars='sex'
+  qcovars=c('sex', 'famid')
 
 }
   
