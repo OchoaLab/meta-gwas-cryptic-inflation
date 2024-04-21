@@ -28,7 +28,7 @@ mkdir sim4_h08
 # covar files write into each replicate folder in each simulation directory.
 
 # run SAIGE for each simulation separately, array job for 20 replicates: saige.q, saige_subpop.q
-# (split into two .q files to run in parallel)
+# (split into two .q files to run in parallel, saige.q includes joint analysis and male/female subanalyses)
 # saige output files write into each replicate folder in each simulation directory.
 
 # After SAIGE is complete, move into METAL directory
