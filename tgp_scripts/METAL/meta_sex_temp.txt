@@ -1,0 +1,30 @@
+
+
+# Describe and process the input files
+MARKER   MarkerID
+
+ALLELE   Allele1 Allele2
+FREQ     AF_Allele2
+EFFECT   BETA
+STDERR   var
+PVAL     p.value
+
+PROCESS INPUT_PLACEHOLDER_1.txt
+
+# Describe and process the input files
+MARKER   MarkerID
+
+ALLELE   Allele1 Allele2
+FREQ     AF_Allele2
+EFFECT   BETA
+STDERR   var
+PVAL     p.value
+
+PROCESS INPUT_PLACEHOLDER_2.txt
+
+# Weight Command
+WEIGHT 1.0 1.0 1.0
+
+# Execute meta-analysis
+OUTFILE OUTPUT_PLACEHOLDER .txt
+ANALYZE
