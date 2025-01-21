@@ -1,0 +1,121 @@
+```{r}
+library(tidyverse)
+library(simtrait)
+library(gdata)
+```
+
+# load data
+```{r}
+joint = read.table("./saige/saige_output_height_age.txt", header = TRUE) 
+meta = read.table("/hpc/group/ochoalab/tt207/meta_analysis_aim/METAL/samafs/output_metal_sex_height_age1.txt", header = TRUE) 
+height = c(pval_infl(joint$p.value), pval_infl(meta$P.value))
+
+joint = read.table("./saige/saige_output_fast_glu_age.txt", header = TRUE) 
+meta = read.table("/hpc/group/ochoalab/tt207/meta_analysis_aim/METAL/samafs/output_metal_sex_fast_glu_age1.txt", header = TRUE) 
+fast_glu = c(pval_infl(joint$p.value), pval_infl(meta$P.value))
+
+joint = read.table("./saige/saige_output_t2d_t2d_age.txt", header = TRUE) 
+meta = read.table("/hpc/group/ochoalab/tt207/meta_analysis_aim/METAL/samafs/output_metal_sex_t2d_t2d_age1.txt", header = TRUE) 
+t2d = c(pval_infl(joint$p.value), pval_infl(meta$P.value))
+
+traits <- c("sbp", "fast_ins", "a2h_glu", "a2h_ins", "creatinine", "adiponectin", "leptin", "chol", "ldl", "hdl", "tg", "bmi", "hipc", "waistc", "whr", "dbp", "weight", "cystatin_c")
+
+
+# Iterate over each trait
+for (trait in traits) {
+  
+  # Construct the file paths dynamically based on the trait
+  joint_file <- paste0("./saige/saige_output_", trait, "_trait_age.txt")
+  meta_file <- paste0("/hpc/group/ochoalab/tt207/meta_analysis_aim/METAL/samafs/output_metal_sex_", trait, "_trait_age1.txt")
+  
+  # Read in the data
+  joint <- read.table(joint_file, header = TRUE)
+  meta <- read.table(meta_file, header = TRUE)
+  
+  # Calculate p-value inflation
+  pval_trait <- c(pval_infl(joint$p.value), pval_infl(meta$P.value))
+  
+  # Assign pval_trait to a new variable named after the current trait
+  assign(trait, pval_trait)
+  
+  # Optional: Print or further process the results
+  print(paste("Processed trait:", trait))
+  print(get(trait))
+}
+
+
+#traits <- c("t2d", "height", "fast_glu", "sbp", "fast_ins", "a2h_glu", "a2h_ins", "creatinine", "adiponectin", "leptin", "chol", "ldl", "hdl", "tg", "bmi", "hipc", "waistc", "whr", "dbp")
+
+df = rbind(t2d, height, fast_glu, sbp, fast_ins, a2h_glu, a2h_ins, creatinine, adiponectin, leptin, chol, 
+           ldl, hdl, tg, bmi, hipc, waistc, dbp, whr, weight, cystatin_c) %>% as.data.frame() %>% 
+  rownames_to_column() %>% 
+  rename(trait = rowname, joint_lambda = V1, meta_lambda = V2)
+```
+
+```{r fig.width=6, fig.height=4}
+library(ggplot2)
+# Basic scatter plot
+ggplot(df, aes(x=joint_lambda, y=meta_lambda)) + geom_point() +
+  theme_bw() +
+  geom_abline(aes(slope = 1, intercept = 0, color = "y = x"), size = 1, linetype = "dashed") +
+  coord_equal(xlim=range(df$meta_lambda)) +
+  scale_colour_manual(values="red") + labs(colour="")
+
+ggplot(df, aes(x = joint_lambda, y = meta_lambda)) +
+  geom_point() +
+  theme_bw() +
+  geom_segment(aes(x = min(df$meta_lambda), y = min(df$meta_lambda), 
+                   xend = max(df$meta_lambda), yend = max(df$meta_lambda),
+                   linetype = "y = x", color = "y = x"), size = 1) +  # y = x line
+  geom_vline(aes(xintercept = 1.05, linetype = "x = 1.05", color = "x = 1.05"), size = 1) +  # Vertical line at x = 1.05
+  geom_hline(aes(yintercept = 1.05, linetype = "y = 1.05", color = "y = 1.05"), size = 1) +  # Horizontal line at y = 1.05
+  coord_equal(xlim = range(df$meta_lambda)) +  # Equal aspect ratio
+  scale_colour_manual(name = "Line Types", values = c("y = x" = "red", "x = 1.05" = "gray", "y = 1.05" = "gray")) +  # Custom colors
+  scale_linetype_manual(name = "Line Types", values = c("y = x" = "dashed", "x = 1.05" = "solid", "y = 1.05" = "solid")) +  # Custom line types
+  labs(colour = "", linetype = "") 
+
+
+ggplot(df, aes(x = joint_lambda, y = meta_lambda)) +
+  geom_point() +
+  theme_bw() +
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed", size = 1) +  # y = x line (red, dashed)
+  geom_vline(aes(xintercept = 1.05, linetype = "x = 1.05", color = "x = 1.05"), size = 1) +  # Vertical line at x = 1.05
+  geom_hline(aes(yintercept = 1.05, linetype = "y = 1.05", color = "y = 1.05"), size = 1) +  # Horizontal line at y = 1.05
+  coord_equal(xlim = range(df$meta_lambda)) +  # Equal aspect ratio
+  scale_colour_manual(name = "Line Types", values = c("x = 1.05" = "gray", "y = 1.05" = "gray")) +  # Custom colors for vertical and horizontal lines
+  scale_linetype_manual(name = "Line Types", values = c("x = 1.05" = "solid", "y = 1.05" = "solid")) +  # Custom line types
+  labs(colour = "Line Types", linetype = "Line Types") #+
+  #coord_cartesian(xlim = c(min(df$joint_lambda), 1.1))
+
+ggplot(df, aes(x = joint_lambda, y = meta_lambda)) +
+  geom_point() +
+  theme_bw() +
+  geom_segment(aes(x = min(df$meta_lambda), y = min(df$meta_lambda), 
+                   xend = max(df$meta_lambda), yend = max(df$meta_lambda),
+                   linetype = "y = x", color = "y = x"), size = 1) +  # y = x line
+  geom_vline(aes(xintercept = 1.05, linetype = "x = 1.05", color = "x = 1.05"), size = 1) +  # Vertical line at x = 1.05
+  geom_hline(aes(yintercept = 1.05, linetype = "y = 1.05", color = "y = 1.05"), size = 1) +  # Horizontal line at y = 1.05
+  coord_equal(xlim = range(df$meta_lambda)) +  # Equal aspect ratio
+  scale_colour_manual(name = NULL, values = c("y = x" = "red", "x = 1.05" = "gray", "y = 1.05" = "gray")) +  # Custom colors
+  scale_linetype_manual(name = NULL, values = c("y = x" = "dashed", "x = 1.05" = "solid", "y = 1.05" = "solid")) +  # Custom line types
+  labs(colour = NULL, linetype = NULL, x = "joint analysis lambda", y = "meta analysis lambda") +
+  theme(legend.position = "top")
+
+```
+```{r}
+ggplot(df , aes(x = joint_lambda, y = meta_lambda)) +
+  geom_point(size = 3, alpha = 0.7) +  # Scatter points
+  labs(x = "Simulation", y = "Value", color = "Subset") + 
+  theme( 
+        panel.spacing = unit(1, "lines"), 
+        strip.text = element_text(size = 28),
+        axis.title = element_text(size = 27),  # Adjust the axis title font size
+        legend.text = element_text(size = 28), 
+        axis.text = element_text(size = 26),
+        legend.position = "top", 
+        legend.title = element_blank(), 
+        legend.key.size = unit(3, "lines"),
+        panel.border = element_rect(linewidth = 1.5), 
+        axis.line = element_line(linewidth = 1.5)) 
+```
+

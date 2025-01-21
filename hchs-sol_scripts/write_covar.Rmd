@@ -1,0 +1,129 @@
+```{r}
+library(tidyverse)
+library(genio)
+
+setwd('/hpc/group/ochoalab/tt207/meta_analysis_aim/hchs-sol')
+```
+
+# write id's for sex (not available in fam)
+```{r}
+pheno = read.csv("/hpc/group/ochoalab/zh105/project2/hchs-sol/Ia/heritability/hchs_phen.csv", header = TRUE)
+# read eigen
+grm <- read_grm( '/hpc/group/ochoalab/zh105/project2/hchs-sol/Ia/data_qc_std_mor' )
+eigenvec <- read_eigenvec( '/hpc/group/ochoalab/tt207/meta_analysis_aim/hchs-sol/data_qc_std_mor' )
+
+pheno <- pheno[ match( grm$fam$id, pheno$SUBJECT_ID ), ]
+# now that data is aligned, include all PCs as a single, convenient covariate
+pheno$PCs <- eigenvec$eigenvec
+
+table(pheno$GENDERNUM)
+# 0 - 6893 individuals
+male = pheno %>% filter(GENDERNUM == 0) %>% mutate(famid = SUBJECT_ID, id = SUBJECT_ID) %>% select(famid, id)
+# 1 - 4938 individuals
+female = pheno %>% filter(GENDERNUM == 1) %>% mutate(famid = SUBJECT_ID, id = SUBJECT_ID) %>% select(famid, id)
+# write group id's
+write.table(male, "ids_male.txt", col.names = TRUE, 
+            row.names = FALSE, quote = FALSE)
+write.table(female, "ids_female.txt", col.names = TRUE, 
+            row.names = FALSE, quote = FALSE)
+```
+
+set 1 of traits
+* HEIGHT
+* BMI
+* WAIST_HIP
+* INSULIN_FAST
+```{r}
+hist(pheno$HEIGHT) 
+hist(pheno$BMI)
+hist(pheno$WAIST_HIP)
+hist(pheno$INSULIN_FAST)
+qqnorm(pheno$INSULIN_FAST)
+qqline(pheno$INSULIN_FAST, col = "blue")
+hist(log(pheno$INSULIN_FAST))
+qqnorm(log(pheno$INSULIN_FAST))
+qqline(log(pheno$INSULIN_FAST), col = "blue")
+```
+# set 2 of traits
+* INSULIN_FAST -- log transformed
+* LABA70: glucose fasting (mg/dL) -- log transformed
+* LABA76: glucose post OGTT (mg/dL) -- log transformed
+* LABA101: cystatin C (mg/L) -- log transformed
+* LABA91: High-sensitivity C-Reactive Protein (mg/L) -- log transformed
+* LABA66: Total cholesterol (mg/dL) 
+```{r}
+hist(pheno$LABA70)
+hist(log(pheno$LABA70))
+qqnorm(log(pheno$LABA70))
+qqline(log(pheno$LABA70), col = "blue")
+
+hist(pheno$LABA76)
+hist(log(pheno$LABA76))
+qqnorm(log(pheno$LABA76))
+qqline(log(pheno$LABA76), col = "blue")
+
+hist(pheno$LABA101)
+qqnorm(pheno$LABA101)
+hist(log(pheno$LABA101))
+qqnorm(log(pheno$LABA101))
+qqline(log(pheno$LABA101), col = "blue")
+
+hist(pheno$LABA91)
+qqnorm(pheno$LABA91)
+hist(log(pheno$LABA91))
+qqnorm(log(pheno$LABA91))
+qqline(log(pheno$LABA91), col = "blue")
+
+pheno_2 = pheno %>% mutate(LOG_INSULIN_FAST = log(INSULIN_FAST),
+                           LOG_LABA70 = log(LABA70),
+                           LOG_LABA76 = log(LABA76),
+                           LOG_LABA101 = log(LABA101),
+                           LOG_LABA91 = log(LABA91))
+```
+# set 3 of traits
+* LABA67: Triglycerides (mg/dL) -- log transformed
+* LABA68: HDL-cholesterol (mg/dL) 
+* LABA69: LDL-cholesterol (mg/dL) 
+* ANTA4: Weight (kg)
+```{r}
+hist(pheno$LABA67)
+qqnorm(pheno$LABA67)
+hist(log(pheno$LABA67))
+qqnorm(log(pheno$LABA67))
+qqline(log(pheno$LABA67), col = "blue")
+
+pheno_3 = pheno %>% mutate(LOG_LABA67 = log(LABA67))
+```
+
+# set 4 of traits
+* ANTA10A: Waist Girth (cm)
+* ANTA10B: Hip Girth (cm) ***
+* SBPA5: Average Systolic  
+* SBPA6: Average Diastolic  
+
+
+
+# write covar
+
+```{r}
+#traits = c("HEIGHT", "BMI", "WAIST_HIP", "INSULIN_FAST")
+#traits = c("LOG_INSULIN_FAST", "LOG_LABA70", "LOG_LABA76", "LOG_LABA101", "LOG_LABA91", "LABA66")
+#traits = c("LOG_LABA67", "LABA68", "LABA69", "ANTA4")
+traits = c("ANTA10A", "ANTA10B", "SBPA5", "SBPA6")
+setwd('/hpc/group/ochoalab/tt207/meta_analysis_aim/hchs-sol')
+for (i in seq_along(traits)) {
+  current_trait <- traits[i]
+  #current_trait_age <- trait_age[i]
+  
+  # Create the covar dataframe with the current trait and trait_age
+  covar <- pheno %>%
+    select(SUBJECT_ID, sex = GENDERNUM, all_of(current_trait), PCs) 
+  
+  
+  write.table(covar, paste0("covar_", current_trait, "_trait.txt"), col.names = TRUE,
+            row.names = FALSE, quote = FALSE)
+}
+
+
+```
+
