@@ -1,0 +1,99 @@
+---
+title: "t2d-samafs phenotype distribution"
+output:
+  pdf_document:
+    keep_tex: true
+header-includes:
+  - \usepackage[margin=1in]{geometry}
+date: "2025-01-23"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+Available traits:
+
+* cystatin_c - log transform
+* a2h_ins - log transform
+* creatinine - log transform
+* adiponectin - log transform
+* leptin - log transform
+* chol -- log transform
+* ldl -- log transform
+* hdl -- log transform
+* tg -- log transform
+* bmi -- log transform
+* hipc -- log transform
+* wasitc -- log transform
+* whr -- log transform
+* dbp -- log transform
+* height 
+* fast_glu -- log transform
+* sbp -- log transform
+* fast_ins -- log transform
+* a2h_glu -- log transform
+* weight -- log transform
+
+
+```{r}
+# load phenotype file
+pheno = read.table("/hpc/dctrl/tt207/meta_analysis_aim/samafs/phs000462.v2.pht002844.v2.p1.c1.T2D_GENES_SAMAFS_Project2_WGS_Subject_Phenotypes.DS-DIAB-IRB-RD.txt.gz",
+                   header = TRUE) 
+```
+
+```{r fig.width=7, fig.height=3.5}
+# traits of interest
+traits <- c("height", "fast_glu", "sbp", "fast_ins", "a2h_glu", "a2h_ins", 
+            "creatinine", "adiponectin", "leptin", "chol", "ldl", 
+            "hdl", "tg", "bmi", "hipc", "waistc", "whr", "dbp", "weight")
+
+
+for (i in seq_along(traits)) {
+  current_trait <- traits[i]
+  print(current_trait)
+  
+  # fit regression model (untransformed)
+  par(mfrow = c(1, 2))
+  obj <- lm(pheno[[current_trait]] ~ pheno$sex + pheno$age)
+  y2 <- obj$residuals
+  hist(y2, main = paste("Residuals for", current_trait), 
+       xlab = paste("Residuals ", current_trait))
+  qqnorm(y2, main = paste("Residuals for", current_trait))
+  qqline(y2, col = "blue")
+  
+  # fit regression model (apply log transformation)
+  obj <- lm(log(pheno[[current_trait]]) ~ pheno$sex + pheno$age)
+  y2 <- obj$residuals
+  hist(y2, main = paste("Residuals for \n Log transformed", current_trait), 
+       xlab = paste("Residuals log", current_trait))
+  qqnorm(y2, main = paste("Residuals for \n Log transformed", current_trait))
+  qqline(y2, col = "blue")
+}
+```
+
+```{r fig.width=7, fig.height=3.5}
+cleaned_pheno <- pheno %>%
+  filter(!is.na(cystatin_c), !is.nan(cystatin_c), !is.infinite(cystatin_c)) %>%
+  filter(!is.na(sex), !is.na(age)) 
+
+par(mfrow = c(1, 2))
+obj <- lm(as.numeric(cystatin_c) ~ sex + age, data = cleaned_pheno)
+y2 <- obj$residuals
+hist(y2, main = "Residuals for cystatin_c", 
+     xlab = "Residuals cystatin_c")
+qqnorm(y2, main = "Residuals for cystatin_c")
+qqline(y2, col = "blue")
+
+obj <- lm(log(as.numeric(cystatin_c)) ~ sex + age, data = cleaned_pheno)
+y2 <- obj$residuals
+hist(y2, main = "Residuals for log cystatin_c", 
+     xlab = "Residuals log cystatin_c")
+qqnorm(y2, main = "Residuals for log cystatin_c")
+qqline(y2, col = "blue")
+
+```
+
+
+
