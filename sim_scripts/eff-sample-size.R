@@ -7,6 +7,9 @@ library(ochoalabtools)
 
 # the ones that make the most sense to consider are admixture and family structure, the first is not quite what appears in the main simulations, but it's close enough I think
 
+# raw data tibble; don't recalculate data if we're just updating plots
+file_data <- 'eff-sample-size.txt.gz'
+
 # want a series of sample sizes and heritabilities
 n_inds <- 100 * ( 1 : 10 )
 n_ind_max <- max( n_inds )
@@ -20,80 +23,89 @@ Gs <- c( 1, 30 )
 fsts <- (0:3) / 10
 # NOTE: only constants we kept are `k_subpops = 3, bias_coeff = 0.5`
 
-data <- NULL
-for ( G in Gs ) {
-    for ( fst in fsts ) {
-        # make big kinship matrix 
-        kinship_max <- sim_pop( n_ind = n_ind_max, G = G, fst = fst, verbose = FALSE )$kinship
-        
-        for ( n_ind in n_inds ) {
-            # subsample
-            indexes <- sample.int( n_ind_max, n_ind )
-            kinship <- kinship_max[ indexes, indexes ]
+# work from this location
+setwd( '../data/' )
+
+if ( ! file.exists( file_data ) ) {
+
+    # calculate desired statistics
+    data <- NULL
+    for ( G in Gs ) {
+        for ( fst in fsts ) {
+            # make big kinship matrix 
+            kinship_max <- sim_pop( n_ind = n_ind_max, G = G, fst = fst, verbose = FALSE )$kinship
             
-            for ( herit in herits ) {
-                message( 'G=', G, ', fst=', fst, ', n=', n_ind, ', h2=', herit )
-                # construct V matrix depending on herit
-                V <- cov_trait( kinship, herit )
-
-                # invert, which is the form most of these things have
-                V_inv <- solve( V )
-
-                # one statistic is sum_inv
-                sum_inv <- sum( V_inv )
-                # the others all depend on the normalized version of V_inv
-                V_inv_tilde <- V_inv / sum_inv
-                w <- rowSums( V_inv_tilde )
+            for ( n_ind in n_inds ) {
+                # subsample
+                indexes <- sample.int( n_ind_max, n_ind )
+                kinship <- kinship_max[ indexes, indexes ]
                 
-                # gather data
-                data_i <- tibble(
-                    n_ind = n_ind,
-                    G = G,
-                    fst = fst,
-                    herit = herit,
-                    sum_inv = sum_inv,
-                    tr_inv_tilde = sum( diag( V_inv_tilde ) ),
-                    tr_w2 = sum( diag( crossprod( w ) ) ),
-                    tr_delta = ( tr_inv_tilde - tr_w2 ) * sum_inv,
-                    total = 2 * herit * tr_delta^2 / ( n_ind - 1 - ( 1 - herit ) * tr_delta )
-                )
-                
-                data <- bind_rows( data, data_i )
+                for ( herit in herits ) {
+                    message( 'G=', G, ', fst=', fst, ', n=', n_ind, ', h2=', herit )
+                    # construct V matrix depending on herit
+                    V <- cov_trait( kinship, herit )
+
+                    # invert, which is the form most of these things have
+                    V_inv <- solve( V )
+
+                    # one statistic is sum_inv
+                    sum_inv <- sum( V_inv )
+                    # the others all depend on the normalized version of V_inv
+                    V_inv_tilde <- V_inv / sum_inv
+                    w <- rowSums( V_inv_tilde )
+                    
+                    # gather data
+                    data_i <- tibble(
+                        n_ind = n_ind,
+                        G = G,
+                        fst = fst,
+                        herit = herit,
+                        sum_inv = sum_inv,
+                        tr_inv_tilde = sum( diag( V_inv_tilde ) ),
+                        tr_w2 = sum( diag( crossprod( w ) ) ),
+                        tr_delta = ( tr_inv_tilde - tr_w2 ) * sum_inv,
+                        factor = 2 * herit * tr_delta^2 / ( n_ind - 1 - ( 1 - herit ) * tr_delta )
+                    )
+                    
+                    data <- bind_rows( data, data_i )
+                }
             }
         }
     }
-}
 
-# save data for later analysis
-setwd( '../data/' )
-write_tsv( data, 'eff-sample-size.txt.gz' )
+    # save data for later analysis
+    write_tsv( data, file_data )
 
-# to read back
-#data <- read_tsv( 'eff-sample-size.txt.gz' )
+} else
+    # read back existing data
+    data <- read_tsv( file_data, show_col_types = FALSE )
+
 
 # massage data a tiny bit for plot
+data <- data %>% mutate( factor = factor / 2 )
 data$herit <- factor( data$herit, levels = rev( herits ) )
 data <- data %>% rename( FST = fst )
 
 wh <- fig_scale( 2 )
 
-# the total factor is very strongly correlated to sample size, as expected!  So confounding will grow with sample size
+# the factor is very strongly correlated to sample size, as expected!  So confounding will grow with sample size
 fig_start( 'factor', width = wh[1], height = wh[2] )
-ggplot( data, aes( x = n_ind, y = total, col = herit ) ) +
+ggplot( data, aes( x = n_ind, y = factor, col = herit ) ) +
     geom_line() +
     theme_classic() +
     facet_grid( G ~ FST, labeller = label_both ) +
-    geom_abline( slope = 2, intercept = 0, linetype = 'dashed', color = 'gray' ) +
-    labs( x = 'Sample size', y = 'Squared factor', col = 'Heritability' )
+    geom_abline( slope = 1, intercept = 0, linetype = 'dashed', color = 'gray' ) +
+    labs( x = 'Sample size', y = 'Factor', col = 'Heritability' )
 fig_end()
 
 # get slope!
 fig_start( 'slope', width = wh[1], height = wh[2] )
-ggplot( data, aes( x = n_ind, y = total / n_ind, col = herit ) ) +
+ggplot( data, aes( x = n_ind, y = factor / n_ind, col = herit ) ) +
     geom_line() +
     theme_classic() +
     facet_grid( G ~ FST, labeller = label_both ) +
-    labs( x = 'Sample size', y = 'Squared factor / sample size', col = 'Heritability' )
+    geom_hline( yintercept = 1, linetype = 'dashed', color = 'gray' ) +
+    labs( x = 'Sample size', y = 'Factor / sample size', col = 'Heritability' )
 fig_end()
 
 
