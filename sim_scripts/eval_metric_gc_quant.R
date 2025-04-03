@@ -2,7 +2,7 @@ library(tidyverse)
 library(simtrait)
 library(optparse) 
 
-setwd('/hpc/group/ochoalab/tt207/meta_analysis_aim')
+setwd('/hpc/dctrl/tt207/meta_analysis_aim')
 # terminal inputs
 option_list = list(
   make_option(c( "-s", "--simulation"), type = "character", default = 'sim1', 
@@ -128,7 +128,7 @@ for (rep_num in 1:20) {
   
   # inflation values, srmsd, aucpr
   infl_pvals <- numeric()
-  infl_pvals_null <- numeric()
+  #infl_pvals_null <- numeric()
   infl_pvals_gc <- numeric()
   infl_pvals_gc_null <- numeric()
   srmsd_vals <- numeric()
@@ -142,8 +142,8 @@ for (rep_num in 1:20) {
     infl_pval <- pval_infl(file$p.value)
     infl_pvals <- c(infl_pvals, infl_pval)
     
-    infl_pval_null <- pval_infl(file$p.value[-causal_id$x])
-    infl_pvals_null <- c(infl_pvals_null, infl_pval_null)
+    #infl_pval_null <- pval_infl(file$p.value[-causal_id$x])
+    #infl_pvals_null <- c(infl_pvals_null, infl_pval_null)
     
     infl_pval_gc <- pval_infl(pval_gc(file$p.value)$pvals)
     infl_pvals_gc <- c(infl_pvals_gc, infl_pval_gc)
@@ -159,17 +159,20 @@ for (rep_num in 1:20) {
     
     auc <- pval_aucpr(file$p.value, causal_id$x, curve = FALSE)
     auc_vals <- c(auc_vals, auc)
+    
+    auc_gc <- pval_aucpr(pval_gc(file$p.value)$pvals, causal_id$x, curve = FALSE)
+    auc_vals_gc <- c(auc_vals_gc, auc_gc)
   }
 
   ## create dataframe for evaluation metrics:
   ## create dataframe for evaluation metrics:
   analysis <- c("joint", "S1", "S2", "S3", "male", "female", "sex-meta", "subpop-meta")
-  df <- data.frame(analysis, infl_pvals, infl_pvals_null, infl_pvals_gc, infl_pval_gc_null, srmsd_vals, srmsd_vals_gc, auc_vals)
+  df <- data.frame(analysis, infl_pvals, infl_pvals_gc, infl_pval_gc_null, srmsd_vals, srmsd_vals_gc, auc_vals, auc_vals_gc)
   df$rep <- rep_num
   combined_df = rbind(combined_df, df)
 }
 
 rownames(combined_df) <- NULL
-write.table(combined_df, paste0("./eval_tables/", simulation, "_1_20_gc_quant.txt" ),
+write.table(combined_df, paste0("./eval_tables/", simulation, "_1_20_gc_quant_null.txt" ),
             col.names = TRUE, row.names = FALSE, quote = FALSE)
 

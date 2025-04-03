@@ -2,7 +2,7 @@ library(tidyverse)
 library(simtrait)
 library(optparse) 
 
-setwd('/hpc/group/ochoalab/tt207/meta_analysis_aim')
+setwd('/hpc/dctrl/tt207/meta_analysis_aim')
 # terminal inputs
 option_list = list(
   make_option(c( "-s", "--simulation"), type = "character", default = 'sim1', 
@@ -13,7 +13,7 @@ option_list = list(
 opt_parser <- OptionParser(option_list = option_list)
 opt <- parse_args(opt_parser)
 # get values
-simulation <- opt$simulation # sim1
+simulation <- opt$simulation # sim1_h08
 file_name <- opt$filename # 1G_3000n_100causal_500000m 
 sim = sub("_.*", "", simulation)
 # create a list of all snps, since some snps are removed during saige
@@ -85,11 +85,12 @@ for (rep_num in 1:20) {
   
   # inflation values, srmsd, aucpr
   infl_pvals <- numeric()
-  infl_pvals_null <- numeric()
+  #infl_pvals_null <- numeric()
   infl_pvals_gc <- numeric()
   infl_pvals_gc_null <- numeric()
   srmsd_vals <- numeric()
   srmsd_vals_gc <- numeric()
+
   auc_vals <- numeric()
   auc_vals_gc <- numeric()
   
@@ -99,8 +100,8 @@ for (rep_num in 1:20) {
     infl_pval <- pval_infl(file$p.value)
     infl_pvals <- c(infl_pvals, infl_pval)
     
-    infl_pval_null <- pval_infl(file$p.value[-causal_id$x])
-    infl_pvals_null <- c(infl_pvals_null, infl_pval_null)
+    #infl_pval_null <- pval_infl(file$p.value[-causal_id$x])
+    #infl_pvals_null <- c(infl_pvals_null, infl_pval_null)
     
     infl_pval_gc <- pval_infl(pval_gc(file$p.value)$pvals)
     infl_pvals_gc <- c(infl_pvals_gc, infl_pval_gc)
@@ -114,16 +115,17 @@ for (rep_num in 1:20) {
     srmsd_gc <- pval_srmsd(pval_gc(file$p.value)$pvals, causal_id$x) 
     srmsd_vals_gc <- c(srmsd_vals_gc, srmsd_gc)
     
+    
     auc <- pval_aucpr(file$p.value, causal_id$x, curve = FALSE)
     auc_vals <- c(auc_vals, auc)
     
-    # auc_gc <- pval_aucpr(pval_gc(file$p.value)$pvals, causal_id$x, curve = FALSE)
-    # auc_vals_gc <- c(auc_vals_gc, auc_gc)
+    auc_gc <- pval_aucpr(pval_gc(file$p.value)$pvals, causal_id$x, curve = FALSE)
+    auc_vals_gc <- c(auc_vals_gc, auc_gc)
   }
 
   ## create dataframe for evaluation metrics:
   analysis <- c("joint", "S1", "S2", "S3", "male", "female", "sex-meta", "subpop-meta")
-  df <- data.frame(analysis, infl_pvals, infl_pvals_null, infl_pvals_gc, infl_pval_gc_null, srmsd_vals, srmsd_vals_gc, auc_vals)
+  df <- data.frame(analysis, infl_pvals, infl_pvals_gc, infl_pval_gc_null, srmsd_vals, srmsd_vals_gc, auc_vals, auc_vals_gc)
   df$rep <- rep_num
   combined_df = rbind(combined_df, df)
   
@@ -132,6 +134,6 @@ for (rep_num in 1:20) {
 }
 
 rownames(combined_df) <- NULL
-write.table(combined_df, paste0("./eval_tables/", simulation, "_1_20_gc_binary.txt" ),
+write.table(combined_df, paste0("./eval_tables/", simulation, "_1_20_gc_binary_null.txt" ),
             col.names = TRUE, row.names = FALSE, quote = FALSE)
 
