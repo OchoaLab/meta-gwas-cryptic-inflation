@@ -47,57 +47,32 @@ df = rbind(LOG_LABA68, LOG_LABA69, LOG_ANTA4, LOG_LABA66, LOG_BMI,
            LOG_LABA102, LOG_LABA103, LOG_LABA82, LOG_SLPA54) %>% as.data.frame() %>% 
   rownames_to_column() %>% 
   rename(trait = rowname, joint_lambda = V1, meta_lambda = V2)
+
+write.table(df, "/hpc/dctrl/tt207/meta_analysis_aim/hchs-sol/inflation_factor_data.txt", col.names = TRUE, row.names = FALSE)
 ```
 
 ```{r fig.width=6, fig.height=4}
 library(ggplot2)
-# Basic scatter plot
-ggplot(df, aes(x=joint_lambda, y=meta_lambda)) + geom_point() +
-  theme_bw() +
-  geom_abline(aes(slope = 1, intercept = 0, color = "y = x"), size = 1, linetype = "dashed") +
-  #coord_equal(xlim=range(df$meta_lambda)) +
-  scale_colour_manual(values="red") + labs(colour="")
 
 ggplot(df, aes(x = joint_lambda, y = meta_lambda)) +
-  geom_point() +
-  theme_bw() +
+  scale_colour_manual(name = NULL, values = c("y = x" = "red", "x = 1.05" = "gray", "y = 1.05" = "gray")) +  
+  scale_linetype_manual(name = NULL, values = c("y = x" = "dashed", "x = 1.05" = "solid", "y = 1.05" = "solid")) +  
+
+  # Draw all lines first (behind)
   geom_segment(aes(x = min(df$meta_lambda), y = min(df$meta_lambda), 
                    xend = max(df$meta_lambda), yend = max(df$meta_lambda),
-                   linetype = "y = x", color = "y = x"), size = 1) +  # y = x line
-  geom_vline(aes(xintercept = 1.05, linetype = "x = 1.05", color = "x = 1.05"), size = 1) +  # Vertical line at x = 1.05
-  geom_hline(aes(yintercept = 1.05, linetype = "y = 1.05", color = "y = 1.05"), size = 1) +  # Horizontal line at y = 1.05
-  coord_equal(xlim = range(df$meta_lambda)) +  # Equal aspect ratio
-  scale_colour_manual(name = "Line Types", values = c("y = x" = "red", "x = 1.05" = "gray", "y = 1.05" = "gray")) +  # Custom colors
-  scale_linetype_manual(name = "Line Types", values = c("y = x" = "dashed", "x = 1.05" = "solid", "y = 1.05" = "solid")) +  # Custom line types
-  labs(colour = "", linetype = "") 
+                   linetype = "y = x", color = "y = x"), size = 1) +
+  geom_vline(aes(xintercept = 1.05, linetype = "x = 1.05", color = "x = 1.05"), size = 1) + 
+  geom_hline(aes(yintercept = 1.05, linetype = "y = 1.05", color = "y = 1.05"), size = 1) +  
 
-
-ggplot(df, aes(x = joint_lambda, y = meta_lambda)) +
+  # Now draw the points on top
   geom_point() +
-  theme_bw() +
-  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed", size = 1) +  # y = x line (red, dashed)
-  geom_vline(aes(xintercept = 1.05, linetype = "x = 1.05", color = "x = 1.05"), size = 1) +  # Vertical line at x = 1.05
-  geom_hline(aes(yintercept = 1.05, linetype = "y = 1.05", color = "y = 1.05"), size = 1) +  # Horizontal line at y = 1.05
-  coord_equal(xlim = range(df$meta_lambda)) +  # Equal aspect ratio
-  scale_colour_manual(name = "Line Types", values = c("x = 1.05" = "gray", "y = 1.05" = "gray")) +  # Custom colors for vertical and horizontal lines
-  scale_linetype_manual(name = "Line Types", values = c("x = 1.05" = "solid", "y = 1.05" = "solid")) +  # Custom line types
-  labs(colour = "Line Types", linetype = "Line Types") #+
-  #coord_cartesian(xlim = c(min(df$joint_lambda), 1.1))
 
-ggplot(df, aes(x = joint_lambda, y = meta_lambda)) +
-  geom_point() +
+  labs(colour = NULL, linetype = NULL, 
+       x = "Joint analysis inflation factor", 
+       y = "Sex-stratified meta-analysis inflation factor") +
   theme_bw() +
-  geom_segment(aes(x = min(df$meta_lambda), y = min(df$meta_lambda), 
-                   xend = max(df$meta_lambda), yend = max(df$meta_lambda),
-                   linetype = "y = x", color = "y = x"), size = 1) +  # y = x line
-  geom_vline(aes(xintercept = 1.05, linetype = "x = 1.05", color = "x = 1.05"), size = 1) +  # Vertical line at x = 1.05
-  geom_hline(aes(yintercept = 1.05, linetype = "y = 1.05", color = "y = 1.05"), size = 1) +  # Horizontal line at y = 1.05
-  #coord_equal(xlim = range(df$meta_lambda)) +  # Equal aspect ratio
-  scale_colour_manual(name = NULL, values = c("y = x" = "red", "x = 1.05" = "gray", "y = 1.05" = "gray")) +  # Custom colors
-  scale_linetype_manual(name = NULL, values = c("y = x" = "dashed", "x = 1.05" = "solid", "y = 1.05" = "solid")) +  # Custom line types
-  labs(colour = NULL, linetype = NULL, x = "joint analysis lambda", y = "meta analysis lambda") +
   theme(legend.position = "top")
-
 ```
 
 
