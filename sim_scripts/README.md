@@ -1,0 +1,5 @@
+- `main_sim1-4.bash`: overview of simulation structure for our 4 simulations scenarios
+- Each simulation is generated with `sim1_gen_pop.q`, `sim2_gen_pop.q`, `sim3_gen_pop.q`, `sim4_gen_pop.q` separately. 
+- famid / individual stored in `S1-1.txt`, `S1-2.txt`, `S1-3.txt`, `S1.txt`, `S2.txt`, `S3.txt` for the purpose of splitting data by subpopulation. 
+- Evaluation metrics (inflation factor, srmsd, auc, gc) is calculated separately for binary and quantitative trait analyses: `eval_metric_gc_binary.R`, `eval_metric_gc_quant.R`
+- Plotting final evaluation metric results: `plot_eval_GC.R`

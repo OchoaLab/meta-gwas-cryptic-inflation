@@ -4,7 +4,7 @@ unpub
 # don't commit anything under individual replicates (this is actually quite general filter that obviates a lot of the rest)
 rep-*/
 
-.Rapp.history 
+**/.Rapp.history
 
 # we should never commit data here, so let's forbid the bed/bim/fam/phen extensions
 *.bed

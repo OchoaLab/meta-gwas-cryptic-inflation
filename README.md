@@ -1,3 +1,5 @@
+For this project, we evaluate confounding due to cryptic relatedness in genetic association meta-analysis using simulated data of varying population structure and family relatedness scenarios and real data from SAMAFS and HCHS-SOL. Additionally, using simulated kinship matrices, we show that the variance in between-study kinship values empirically scales with substudy sample size and increases with heritability and $F_{st}$. 
+
 **Folders**
 - Simulated data results are in `sim_scripts` folder
 - Real data results
