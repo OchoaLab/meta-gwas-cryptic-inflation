@@ -5,7 +5,6 @@ For this project, we evaluate confounding due to cryptic relatedness in genetic 
 - Real data results
   - San Antonio Mexican American Family Studies (SAMAFS) Project 2 (dbGaP accession phs000847.v2.p1) : `t2d-samafs_scripts`
   - The Hispanic Community Healthy Study/Study of Latinos (HCHS/SOL) (dbGaP accession phs000810.v2.p2) : `hchs-sol_scripts`
-  - 1000 Genomes Project with simulated traits: `tgp_scripts`
 - `figures` folder : SAMAFS and HCHS/SOL phenotype distribution plots
 - `data` folder : scripts & data for theory figures
 
