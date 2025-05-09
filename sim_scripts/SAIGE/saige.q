@@ -14,14 +14,14 @@ export LD_LIBRARY_PATH=/opt/apps/rhel8/lapack/lib64:$LD_LIBRARY_PATH
 module load R/4.1.1-rhel8
 
 # saige with binary traits
-time Rscript saige_step1_fes.R -s sim3_h08 -a all -f 30G_3000n_100causal_500000m -n $input_value
-time Rscript saige_step2.R -s sim3_h08 -a all -f 30G_3000n_100causal_500000m -n $input_value
+time Rscript saige_step1_binary.R -s sim3_h08 -a all -f 30G_3000n_100causal_500000m -n $input_value
+time Rscript saige_step2_binary.R -s sim3_h08 -a all -f 30G_3000n_100causal_500000m -n $input_value
 
-time Rscript saige_step1_fes.R -s sim3_h08 -a sex -f 30G_3000n_100causal_500000m_male -n $input_value
-time Rscript saige_step2.R -s sim3_h08 -a sex -f 30G_3000n_100causal_500000m_male -n $input_value
+time Rscript saige_step1_binary.R -s sim3_h08 -a sex -f 30G_3000n_100causal_500000m_male -n $input_value
+time Rscript saige_step2_binary.R -s sim3_h08 -a sex -f 30G_3000n_100causal_500000m_male -n $input_value
 
-time Rscript saige_step1_fes.R -s sim3_h08 -a sex -f 30G_3000n_100causal_500000m_female -n $input_value
-time Rscript saige_step2.R -s sim3_h08 -a sex -f 30G_3000n_100causal_500000m_female -n $input_value
+time Rscript saige_step1_binary.R -s sim3_h08 -a sex -f 30G_3000n_100causal_500000m_female -n $input_value
+time Rscript saige_step2_binary.R -s sim3_h08 -a sex -f 30G_3000n_100causal_500000m_female -n $input_value
 
 
 module unload R/4.1.1-rhel8

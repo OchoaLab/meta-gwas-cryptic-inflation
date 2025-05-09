@@ -1,0 +1,143 @@
+```{r}
+library(tidyverse)
+library(genio)
+```
+
+# write id's for sex (not available in fam)
+```{r}
+pheno = read.table("phs000462.v2.pht002844.v2.p1.c1.T2D_GENES_SAMAFS_Project2_WGS_Subject_Phenotypes.DS-DIAB-IRB-RD.txt.gz", header = TRUE)
+
+table(pheno$sex)
+male = pheno %>% filter(sex == 1) %>% mutate(famid = SUBJECT_ID, id = SUBJECT_ID) %>% select(famid, id)
+female = pheno %>% filter(sex == 2) %>% mutate(famid = SUBJECT_ID, id = SUBJECT_ID) %>% select(famid, id)
+# write group id's
+write.table(male, "ids_male.txt", col.names = TRUE, 
+            row.names = FALSE, quote = FALSE)
+write.table(female, "ids_female.txt", col.names = TRUE, 
+            row.names = FALSE, quote = FALSE)
+```
+
+# write covar
+```{r}
+grm <- read_grm( 'exome_chip_qc' )
+eigenvec <- read_eigenvec( 'exome_chip_qc' )
+
+pheno <- pheno[ match( grm$fam$id, pheno$SUBJECT_ID ), ]
+# now that data is aligned, include all PCs as a single, convenient covariate
+pheno$PCs <- eigenvec$eigenvec
+
+```
+
+set of traits 1:
+* cystatin_c - log transform
+* a2h_ins - log transform
+* creatinine - log transform
+* adiponectin - log transform
+* leptin - log transform
+
+
+```{r}
+pheno_1 = pheno %>% mutate(LOG_cystatin_c = log(as.numeric(cystatin_c)),
+                           LOG_a2h_ins = log(a2h_ins),
+                           LOG_creatinine = log(creatinine),
+                           LOG_adiponectin = log(adiponectin),
+                           LOG_leptin = log(leptin))
+```
+
+set of traits 2:
+* tg -- log transform
+* bmi
+* wasitc 
+* whr 
+
+```{r}
+pheno_2 = pheno %>% mutate(LOG_tg = log(tg))
+```
+
+set of traits 3:
+* hipc -- log transform
+* dbp -- log transform
+* chol -- log transform
+* ldl -- log transform
+* hdl -- log transform
+```{r}
+pheno_3 = pheno %>% mutate(LOG_hipc = log(hipc),
+                           LOG_dbp = log(dbp),
+                           LOG_chol = log(chol),
+                           LOG_ldl = log(ldl),
+                           LOG_hdl = log(hdl))
+```
+
+set of traits 4:
+* bmi -- log transform
+* whr -- log transform
+* waistc -- log transform
+```{r}
+pheno_4 = pheno %>% mutate(LOG_bmi = log(bmi),
+                           LOG_whr = log(whr),
+                           LOG_waistc = log(waistc))
+```
+
+```{r}
+pheno_5 = pheno %>% mutate(LOG_fast_glu = log(fast_glu),
+                           LOG_fast_ins = log(fast_ins),
+                           LOG_sbp = log(sbp),
+                           LOG_a2h_glu = log(a2h_glu),
+                           LOG_weight = log(weight))
+```
+
+
+```{r}
+traits = c("cystatin_c", "a2h_ins", "creatinine", "adiponectin", "leptin", "chol", "ldl", "hdl", "tg", "bmi", "hipc",
+           "waistc", "whr", "dbp")
+trait_age = c("CYSTATIN_C_AGE", "A2H_INS_AGE", "CREATININE_AGE", "ADIPONECTIN_AGE", "LEPTIN_AGE", 
+              "CHOL_AGE", "LDL_AGE", "HDL_AGE", "TG_AGE", "BMI_AGE", "HIPC_AGE",
+           "WAISTC_AGE", "WHR_AGE", "DBP_AGE")
+
+
+traits = c("LOG_cystatin_c", "LOG_a2h_ins", "LOG_creatinine", "LOG_adiponectin", "LOG_leptin")
+trait_age = c("CYSTATIN_C_AGE", "A2H_INS_AGE", "CREATININE_AGE", "ADIPONECTIN_AGE", "LEPTIN_AGE")
+
+
+traits = c("LOG_hipc", "LOG_dbp", "LOG_chol", "LOG_ldl", "LOG_hdl")
+trait_age = c("HIPC_AGE", "DBP_AGE", "CHOL_AGE", "LDL_AGE", "HDL_AGE")
+
+
+traits = c("LOG_bmi", "LOG_whr", "LOG_waistc")
+trait_age = c("BMI_AGE", "WHR_AGE", "WAISTC_AGE")
+
+traits = c("LOG_fast_glu", "LOG_fast_ins", "LOG_sbp", "LOG_a2h_glu", "LOG_weight")
+trait_age = c("FAST_GLU_AGE", "FAST_INS_AGE", "SBP_AGE", "A2H_GLU_AGE", "WEIGHT_AGE")
+
+for (i in seq_along(traits)) {
+  current_trait <- traits[i]
+  current_trait_age <- trait_age[i]
+  
+  # Create the covar dataframe with the current trait and trait_age
+  covar <- pheno_5 %>%
+    select(SUBJECT_ID, sex, all_of(current_trait), all_of(current_trait_age), PCs) 
+  
+ 
+  write.table(covar, paste0("covar_", current_trait, "_trait_age.txt"), col.names = TRUE, 
+            row.names = FALSE, quote = FALSE)
+}
+
+
+
+
+colnames(pheno)
+table(pheno$t2d)
+hist(pheno$cystatin_c)
+sum(is.na(pheno$cystatin_c))
+sum(is.na(pheno$a2h_glu)) # 151 missing
+sum(is.na(pheno$a2h_ins)) # 210 missing
+sum(is.na(pheno$cystatin_c)) # 43 missing
+sum(is.na(pheno$creatinine)) # 329 missing
+sum(is.na(pheno$adiponectin)) # 280
+sum(is.na(pheno$lepton)) 
+sum(is.na(pheno$chol)) # 19
+sum(is.na(pheno$ldl)) # 31
+sum(is.na(pheno$hdl)) # 19
+sum(is.na(pheno$tg)) 
+```
+
