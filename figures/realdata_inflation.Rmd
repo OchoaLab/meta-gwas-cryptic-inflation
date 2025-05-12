@@ -1,0 +1,44 @@
+```{r}
+library(tidyverse)
+library(simtrait)
+library(gdata)
+```
+
+# combine inflation figure from the two real datasets
+# load data
+```{r}
+hchs_sol_df = read.table("/hpc/dctrl/tt207/meta_analysis_aim/hchs-sol/inflation_factor_data.txt", header = TRUE)
+hchs_sol_df$data = "HCHS-SOL"
+samafs_df = read.table("/hpc/dctrl/tt207/meta_analysis_aim/samafs/inflation_factor_data.txt", header = TRUE)
+samafs_df$data = "SAMAFS"
+df <- rbind(samafs_df, hchs_sol_df)
+df$data <- factor(df$data, levels = c("SAMAFS", setdiff(unique(df$data), "SAMAFS")))
+```
+
+```{r fig.width=8, fig.height=4}
+library(ggplot2)
+
+ggplot(df, aes(x = joint_lambda, y = meta_lambda)) +
+  scale_colour_manual(name = NULL, values = c("y = x" = "red", "x = 1.05" = "gray", "y = 1.05" = "gray")) +  
+  scale_linetype_manual(name = NULL, values = c("y = x" = "dashed", "x = 1.05" = "solid", "y = 1.05" = "solid")) +  
+
+  # Draw all lines first (behind)
+  geom_abline(aes(slope = 1, intercept = 0, linetype = "y = x", color = "y = x"), size = 1) +
+  geom_vline(aes(xintercept = 1.05, linetype = "x = 1.05", color = "x = 1.05"), size = 1) + 
+  geom_hline(aes(yintercept = 1.05, linetype = "y = 1.05", color = "y = 1.05"), size = 1) +  
+
+  # Now draw the points on top
+  geom_point() +
+
+  labs(colour = NULL, linetype = NULL, 
+       x = "Joint analysis inflation factor", 
+       y = "Sex-stratified meta-analysis inflation factor") +
+  theme_classic() +
+  #coord_fixed(ratio = 1) +  # Add fixed aspect ratio here
+  theme(legend.position = "none") +
+  facet_wrap(~data, scales = "fixed") +
+  xlim(c(0.95, 1.2)) +  # Set the x-axis range (adjust to your desired limits)
+  ylim(c(0.95, 1.2))
+```
+
+

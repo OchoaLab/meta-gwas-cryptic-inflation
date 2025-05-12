@@ -1,0 +1,92 @@
+```{r}
+library(tidyverse)
+library(qqman)
+library(simtrait)
+```
+
+Select top 3 most inflated traits from each dataset to visualize qqplots
+```{r fig.width=8, fig.height=6}
+make_qq_df <- function(pvals, label, trait_name) {
+  pvals <- pvals[!is.na(pvals)]
+  n <- length(pvals)
+  data.frame(
+    expected = -log10(ppoints(n)),
+    observed = -log10(sort(pvals)),
+    type = label,
+    trait = trait_name
+  )
+}
+
+## HCHS-SOL data
+# For trait A
+meta_file <- paste0("/hpc/dctrl/tt207/meta_analysis_aim/METAL/hchs-sol/output_metal_sex_HEIGHT_trait1.txt")
+meta <- read.table(meta_file, header = TRUE)
+traitA_raw <- make_qq_df(meta$P.value, "Raw", "Height")
+traitA_gc  <- make_qq_df(pval_gc(meta$P.value)$pvals, "GC-adjusted", "Height")
+
+# For trait B
+meta_file <- paste0("/hpc/dctrl/tt207/meta_analysis_aim/METAL/hchs-sol/output_metal_sex_LOG_BMI_trait1.txt")
+meta <- read.table(meta_file, header = TRUE)
+traitB_raw <- make_qq_df(meta$P.value, "Raw", "BMI")
+traitB_gc  <- make_qq_df(pval_gc(meta$P.value)$pvals, "GC-adjusted", "BMI")
+
+# For trait C
+meta_file <- paste0("/hpc/dctrl/tt207/meta_analysis_aim/METAL/hchs-sol/output_metal_sex_LOG_ANTA4_trait1.txt")
+meta <- read.table(meta_file, header = TRUE)
+traitC_raw <- make_qq_df(meta$P.value, "Raw", "Weight")
+traitC_gc  <- make_qq_df(pval_gc(meta$P.value)$pvals, "GC-adjusted", "Weight")
+
+# Combine all
+df_hchssol <- rbind(traitA_raw, traitA_gc, traitB_raw, traitB_gc, traitC_raw, traitC_gc)
+df_hchssol$cohort <- "HCHS/SOL"
+
+## SAMAFS data
+# For trait A
+meta_file <- paste0("/hpc/dctrl/tt207/meta_analysis_aim/METAL/samafs/output_metal_sex_LOG_bmi_trait_age1.txt")
+meta <- read.table(meta_file, header = TRUE)
+traitA_raw <- make_qq_df(meta$P.value, "Raw", "BMI")
+traitA_gc  <- make_qq_df(pval_gc(meta$P.value)$pvals, "GC-adjusted", "BMI")
+
+# For trait B
+meta_file <- paste0("/hpc/dctrl/tt207/meta_analysis_aim/METAL/samafs/output_metal_sex_LOG_weight_trait_age1.txt")
+# Read in the data
+meta <- read.table(meta_file, header = TRUE)
+traitB_raw <- make_qq_df(meta$P.value, "Raw", "Weight")
+traitB_gc  <- make_qq_df(pval_gc(meta$P.value)$pvals, "GC-adjusted", "Weight")
+
+# For trait C
+meta_file <- paste0("/hpc/dctrl/tt207/meta_analysis_aim/METAL/samafs/output_metal_sex_LOG_waistc_trait_age1.txt")
+# Read in the data
+meta <- read.table(meta_file, header = TRUE)
+traitC_raw <- make_qq_df(meta$P.value, "Raw", "Waist circumference")
+traitC_gc  <- make_qq_df(pval_gc(meta$P.value)$pvals, "GC-adjusted", "Waist circumference")
+
+# Combine all
+df_samafs <- rbind(traitA_raw, traitA_gc, traitB_raw, traitB_gc, traitC_raw, traitC_gc)
+df_samafs$cohort <- "SAMAFS"
+df_all <- rbind(df_samafs, df_hchssol)
+df_all$cohort <- factor(df_all$cohort, levels = c("SAMAFS", setdiff(unique(df_all$cohort), "SAMAFS")))
+df_all$type <- factor(df_all$type, levels = c("Raw", "GC-adjusted"))
+
+# Plot with facets
+ggplot(df_all, aes(x = expected, y = observed, color = type)) +
+  geom_point(size = 0.8, alpha = 0.7) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "gray50") +
+  facet_wrap(
+    cohort ~ trait,  # combines cohort and trait into unique facet labels
+    nrow = 2,
+    scales = "free"
+  ) +
+  labs(
+    x = expression(Expected~~-log[10](italic(p))),
+    y = expression(Observed~~-log[10](italic(p))),
+    color = "P-value Type"
+  ) +
+  theme_classic() +
+  theme(
+    strip.text = element_text(size = 9)
+  ) +
+  theme(legend.position = "top") + scale_color_brewer(palette = "Set1")
+```
+
+
