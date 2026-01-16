@@ -41,3 +41,15 @@ mkdir ./METAL/sim4_h08
 # metal output files write into each simulation directory within METAL folder.
 
 # compute evaluation metrics, run for each simulation: eval_metric.q
+
+# some additional, simpler simulation results
+
+# investigation of LMM theoretical factors
+time Rscript eff-sample-size.R
+
+# simulated high polygenicity and high power p-values, to demonstrate GC overcorrection
+time Rscript gc-overcorrection-example.R
+# make output into a smaller PNG
+fig=../data/gc-overcorrection-example.pdf
+pdf2png $fig
+rm $fig
