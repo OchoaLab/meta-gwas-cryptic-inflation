@@ -1,0 +1,123 @@
+```{r}
+library(tidyverse)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(ggpubr)
+```
+
+```{r}
+# load data for samafs
+samafs_loco = read.table("samafs_inflation_factor_loco.txt", header = TRUE)
+samafs_no_loco = read.table("samafs_inflation_factor_data.txt", header = TRUE)
+# load data for hchs_sol
+hchs_loco = read.table("hchs_inflation_factor_loco.txt", header = TRUE)
+hchs_no_loco = read.table("hchs_inflation_factor_data.txt", header = TRUE)
+
+df_loco = gdata::combine(samafs = samafs_loco, "hchs-sol" = hchs_loco)
+df_no_loco = gdata::combine(samafs = samafs_no_loco, "hchs-sol" = hchs_no_loco)
+```
+
+```{r}
+combine_lambda_A <- merge(df_no_loco, df_loco, by = c("trait", "source")) %>%
+  pivot_longer(
+    cols =  -c('trait','source'),
+    names_to = c("method", "LOCO"),
+    names_pattern = "(joint|meta)_(loco)?_?lambda",
+    values_to = "lambda"
+  ) %>%
+  mutate(LOCO = ifelse(LOCO == "loco", "LOCO used", "LOCO not used")) %>%
+  pivot_wider(
+    names_from = method,
+    values_from = lambda,
+    names_glue = "{method}_lambda"
+  )
+
+figA <- ggplot(combine_lambda_A, aes(x = joint_lambda, y = meta_lambda)) +
+  geom_abline(slope = 1, intercept = 0,
+              linetype = "dashed", color = "navy", size = 1,
+              show.legend = FALSE) +
+  geom_vline(xintercept = 1.05,
+             linetype = "solid", color = "gray", size = 1,
+             show.legend = FALSE) +
+  geom_hline(yintercept = 1.05,
+             linetype = "solid", color = "gray", size = 1,
+             show.legend = FALSE) +
+  ggnewscale::new_scale_color() +
+  geom_point(aes(color = factor(LOCO),  alpha = 0.9), size = 1.5) +
+  scale_color_discrete(name = "LOCO") +
+  guides(alpha = "none") +
+  coord_equal() +
+  labs(
+    x = "Joint analysis inflation factor",
+    y = "Sex-stratified meta-analysis inflation factor"
+  ) +
+  theme_classic() +
+  facet_wrap(~ source) +
+  theme(legend.position = "top",
+    aspect.ratio = 1,
+    panel.spacing = unit(0.4, "cm"))
+
+ggsave(
+  filename = "supp_figA.pdf",
+  plot = figA,
+  width = 7,
+  height = 5,
+  units = "in",
+  device = cairo_pdf
+)
+```
+
+```{r}
+combine_lambda_B = merge(df_no_loco, df_loco, by = c("trait", "source")) %>% 
+  pivot_longer(
+    cols = -c('trait','source'),
+    names_to = c("method", "LOCO"),
+    names_pattern = "(joint|meta)(_loco)?_lambda",
+    values_to = "lambda"
+  ) %>%
+  mutate(
+    LOCO = ifelse(LOCO == "_loco", "loco", "no_loco")
+  ) %>%
+  pivot_wider(
+    names_from = LOCO,
+    values_from = lambda
+  )
+
+figB = ggplot(combine_lambda, aes(x = no_loco, y = loco)) +
+  # LOCO points with first color scale
+  geom_point(aes(color = method, alpha = 0.9)) + 
+  scale_color_discrete(name = "Analysis") +
+  guides(alpha = "none") +
+  ggnewscale::new_scale_color() +
+  geom_abline(
+    intercept = 0, slope = 1,
+    linetype = "dashed",
+    color = "navy",
+    size = 1,
+    show.legend = FALSE
+  ) +
+  facet_wrap(~ source) +
+  coord_equal() +
+  labs(
+    x = "LOCO not used", 
+    y = "LOCO used"
+  ) +
+  theme_classic() +
+  theme(
+    legend.position = "top",
+    aspect.ratio = 1,
+    panel.spacing = unit(0.4, "cm")
+  )
+
+ggsave(
+  filename = "supp_figB.pdf",
+  plot = figB,
+  width = 7,
+  height = 5,
+  units = "in",
+  device = cairo_pdf
+)
+```
+
+
