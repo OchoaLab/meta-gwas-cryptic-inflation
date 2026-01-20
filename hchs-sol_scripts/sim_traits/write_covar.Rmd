@@ -1,0 +1,41 @@
+```{r}
+library(tidyverse)
+library(genio)
+
+setwd('/data/irb/biostatisticsbioinformatics/pro00108518/hchs-sol/Ia/cryptic-relatedness/sim_traits/')
+```
+
+# write pheno file for simulated trait
+```{r}
+pheno = read.csv("/data/irb/biostatisticsbioinformatics/pro00108518/hchs-sol/Ia/heritability/hchs_phen.csv", header = TRUE)
+# read eigen
+grm <- read_grm( '../../data_qc_std_mor' )
+eigenvec <- read_eigenvec( '../data_qc_std_mor' )
+
+pheno <- pheno[ match( grm$fam$id, pheno$SUBJECT_ID ), ]
+# now that data is aligned, include all PCs as a single, convenient covariate
+pheno$PCs <- eigenvec$eigenvec
+
+simtrait = read.table("sim_trait1.txt", header = FALSE)$V1
+pheno_simtrait = cbind(simtrait, pheno)
+```
+
+
+# write covar
+
+```{r}
+traits = "simtrait"
+
+covar <- pheno_simtrait %>%
+    select(SUBJECT_ID, sex = GENDERNUM, traits, age = AGE, PCs) 
+  
+write.table(covar, paste0("covar_", traits, ".txt"), col.names = TRUE,
+            row.names = FALSE, quote = FALSE)
+
+
+
+```
+
+
+
+
