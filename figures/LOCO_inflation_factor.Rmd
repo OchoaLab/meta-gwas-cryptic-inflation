@@ -14,8 +14,8 @@ samafs_no_loco = read.table("samafs_inflation_factor_data.txt", header = TRUE)
 hchs_loco = read.table("hchs_inflation_factor_loco.txt", header = TRUE)
 hchs_no_loco = read.table("hchs_inflation_factor_data.txt", header = TRUE)
 
-df_loco = gdata::combine(samafs = samafs_loco, "hchs-sol" = hchs_loco)
-df_no_loco = gdata::combine(samafs = samafs_no_loco, "hchs-sol" = hchs_no_loco)
+df_loco = gdata::combine(SAMAFS = samafs_loco, "HCHS/SOL" = hchs_loco)
+df_no_loco = gdata::combine(SAMAFS = samafs_no_loco, "HCHS/SOL" = hchs_no_loco)
 ```
 
 ```{r}
@@ -26,7 +26,7 @@ combine_lambda_A <- merge(df_no_loco, df_loco, by = c("trait", "source")) %>%
     names_pattern = "(joint|meta)_(loco)?_?lambda",
     values_to = "lambda"
   ) %>%
-  mutate(LOCO = ifelse(LOCO == "loco", "LOCO used", "LOCO not used")) %>%
+  mutate(LOCO = ifelse(LOCO == "loco", "used", "not used")) %>%
   pivot_wider(
     names_from = method,
     values_from = lambda,
@@ -77,14 +77,15 @@ combine_lambda_B = merge(df_no_loco, df_loco, by = c("trait", "source")) %>%
     values_to = "lambda"
   ) %>%
   mutate(
-    LOCO = ifelse(LOCO == "_loco", "loco", "no_loco")
+    LOCO = ifelse(LOCO == "_loco", "loco", "no_loco"),
+    method = ifelse(method == "meta", "sex-meta", method)
   ) %>%
   pivot_wider(
     names_from = LOCO,
     values_from = lambda
   )
 
-figB = ggplot(combine_lambda, aes(x = no_loco, y = loco)) +
+figB = ggplot(combine_lambda_B, aes(x = no_loco, y = loco)) +
   # LOCO points with first color scale
   geom_point(aes(color = method, alpha = 0.9)) + 
   scale_color_discrete(name = "Analysis") +
@@ -100,8 +101,8 @@ figB = ggplot(combine_lambda, aes(x = no_loco, y = loco)) +
   facet_wrap(~ source) +
   coord_equal() +
   labs(
-    x = "LOCO not used", 
-    y = "LOCO used"
+    x = "Original inflation factor", 
+    y = "LOCO inflation factor"
   ) +
   theme_classic() +
   theme(
