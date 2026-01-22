@@ -64,7 +64,7 @@ for (rep_num in 1:10){
 
 write.table(combined_df, "/home/tt207/pro00108518/t2d-samafs/study2/exome_chip/cryptic-relatedness/sim_traits/eval_metric_mask_1000000.txt",
             col.names = TRUE, row.names = FALSE, quote = FALSE)
-combined_df = read.table("/home/tt207/pro00108518/t2d-samafs/study2/exome_chip/cryptic-relatedness/sim_traits/eval_metric_mask_5000000.txt", header = TRUE) 
+combined_df = read.table("/home/tt207/pro00108518/t2d-samafs/study2/exome_chip/cryptic-relatedness/sim_traits/eval_metric_mask_1000000.txt", header = TRUE) 
 
 long_df <- combined_df %>%
   pivot_longer(

@@ -6,7 +6,7 @@ for (rep_num in 1:10){
   bim = read_plink("/home/tt207/pro00108518/t2d-samafs/study2/exome_chip/exome_chip_qc")$bim
   m_causal = 100
   m_loci = nrow(bim)
-  window = 5000000
+  window = 1000000
   causal_neighbors_start <- vector( 'integer', m_causal )
   causal_neighbors_end <- vector( 'integer', m_causal )
   
