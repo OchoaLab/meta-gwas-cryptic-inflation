@@ -1,10 +1,10 @@
 library(tidyverse)
 library(genio)
-for (rep_num in 1){
+for (rep_num in 1:10){
   causal_indexes = read.table(paste0("/home/tt207/pro00108518/hchs-sol/Ia/cryptic-relatedness/sim_traits/rep_", 
-                               rep_num, "/causal_id_150.txt"), header = TRUE) %>% pull(x)
+                               rep_num, "/causal_id.txt"), header = TRUE) %>% pull(x)
   bim = read_plink("/home/tt207/pro00108518/hchs-sol/Ia/data_qc")$bim
-  m_causal = 150
+  m_causal = 100
   m_loci = nrow(bim)
   window = 1000000
   causal_neighbors_start <- vector( 'integer', m_causal )
@@ -41,7 +41,7 @@ for (rep_num in 1){
   
   write.table(bim_remove_id, 
               paste0("/home/tt207/pro00108518/hchs-sol/Ia/cryptic-relatedness/sim_traits/rep_", 
-                                    rep_num, "/bim_mask_id_1000000_150causal.txt"), row.names = FALSE, quote = FALSE)
+                                    rep_num, "/bim_mask_id_", window, ".txt"), row.names = FALSE, quote = FALSE)
 }
 
 

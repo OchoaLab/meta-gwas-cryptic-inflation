@@ -41,7 +41,7 @@ for (rep_num in 1:10){
   
   write.table(bim_remove_id, 
               paste0("/home/tt207/pro00108518/t2d-samafs/study2/exome_chip/cryptic-relatedness/sim_traits/rep_", 
-                                    rep_num, "/bim_mask_id_5000000.txt"), row.names = FALSE, quote = FALSE)
+                                    rep_num, "/bim_mask_id_", window, ".txt"), row.names = FALSE, quote = FALSE)
 }
 
 

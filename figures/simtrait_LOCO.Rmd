@@ -1,0 +1,188 @@
+```{r}
+library(tidyverse)
+library(ggpubr)
+library(RColorBrewer)
+library("ggsci")
+```
+
+```{r}
+# calculate evaluation metrics for SAMAFS
+setwd("/home/tt207/pro00108518/t2d-samafs/study2/exome_chip/cryptic-relatedness/")
+bim = read_plink("/home/tt207/pro00108518/t2d-samafs/study2/exome_chip/exome_chip_qc")$bim
+
+# Iterate over each rep
+file_names = c("joint_loco", "joint_noloco", "meta_loco", "meta_noloco")
+combined_df = c()
+#out_list <- list() 
+for (rep_num in 1:10){
+  joint_loco_file <- paste0("./sim_traits/rep_", rep_num, "/saige_output_simtrait_loco.txt")
+  joint_noloco_file <- paste0("./sim_traits/rep_", rep_num, "/saige_output_simtrait.txt")
+  meta_loco_file <- paste0("./sim_traits/metal/output/simtrait_loco_", rep_num, ".1txt") 
+  meta_noloco_file <- paste0("./sim_traits/metal/output/simtrait_noloco_", rep_num, ".1txt")
+  bim_mask_id_file <- paste0("./sim_traits/rep_", rep_num, "/bim_mask_id.txt")
+  # Read in the data
+  # filter out masked id's
+  bim_mask_id <- read.table(bim_mask_id_file, header = TRUE) %>% pull(x)
+  joint_loco <- read.table(joint_loco_file, header = TRUE) %>% filter(! MarkerID %in% bim_mask_id)
+  joint_noloco <- read.table(joint_noloco_file, header = TRUE) %>% filter(! MarkerID %in% bim_mask_id)
+  meta_loco <- read.table(meta_loco_file, header = TRUE) %>% 
+      select(id = MarkerName, p.value = P.value)
+  meta_sex_loco = merge(meta_loco, bim, by = "id") %>% arrange(chr, pos) %>% filter(! id %in% bim_mask_id)
+  meta_noloco <- read.table(meta_noloco_file, header = TRUE) %>% 
+      select(id = MarkerName, p.value = P.value)
+  meta_sex_noloco = merge(meta_noloco, bim, by = "id") %>% arrange(chr, pos) %>% filter(! id %in% bim_mask_id)
+  causal_id = read.table(paste0("./sim_traits/rep_", rep_num, "/causal_id.txt"), 
+                         header = TRUE)
+  causal_markers = bim[causal_id$x,] %>% pull(id)
+  subset_bim = bim %>% filter(!id %in% bim_mask_id )
+  marker_indices = match(causal_markers, subset_bim$id)
+  # inflation values, srmsd, aucpr
+  srmsd_vals <- numeric()
+  inflation_vals <- numeric()
+  auc_vals <- numeric()
+
+  for (file in file_names) {
+    print(file)
+    file = get(file)
+    
+    srmsd <- pval_srmsd(file$p.value, marker_indices) 
+    srmsd_vals <- c(srmsd_vals, srmsd)
+    
+    inflation <- pval_infl(file$p.value) 
+    inflation_vals <- c(inflation_vals, inflation)
+    
+    auc <- pval_aucpr(file$p.value, marker_indices, curve = FALSE)
+    auc_vals <- c(auc_vals, auc)
+  }
+  analysis <- c("joint-loco", "joint", "sex-meta-loco", "sex-meta")
+  df <- data.frame(analysis, srmsd_vals, inflation_vals, auc_vals)
+  df$rep <- rep_num
+  combined_df = rbind(combined_df, df)
+}
+
+write.table(combined_df, "/home/tt207/pro00108518/t2d-samafs/study2/exome_chip/cryptic-relatedness/sim_traits/eval_metric_mask_1000000.txt",
+            col.names = TRUE, row.names = FALSE, quote = FALSE)
+```
+
+```{r}
+# calculate evaluation metrics for HCHS/SOL
+setwd("/home/tt207/pro00108518/hchs-sol/Ia/cryptic-relatedness/")
+bim = read_plink("/home/tt207/pro00108518/hchs-sol/Ia/data_qc")$bim
+
+# Iterate over each rep
+file_names = c("joint_loco", "joint_noloco", "meta_loco", "meta_noloco")
+combined_df = c()
+#out_list <- list() 
+for (rep_num in 1:10){
+  joint_loco_file <- paste0("./sim_traits/rep_", rep_num, "/saige_output_simtrait_loco.txt")
+  joint_noloco_file <- paste0("./sim_traits/rep_", rep_num, "/saige_output_simtrait.txt")
+  meta_loco_file <- paste0("./sim_traits/metal/output/simtrait_loco_", rep_num, ".1txt") 
+  meta_noloco_file <- paste0("./sim_traits/metal/output/simtrait_noloco_", rep_num, ".1txt")
+  bim_mask_id_file <- paste0("./sim_traits/rep_", rep_num, "/bim_mask_id_1000000.txt")
+  # Read in the data
+  # filter out masked id's
+  bim_mask_id <- read.table(bim_mask_id_file, header = TRUE) %>% pull(x)
+  joint_loco <- read.table(joint_loco_file, header = TRUE) %>% filter(! MarkerID %in% bim_mask_id)
+  joint_noloco <- read.table(joint_noloco_file, header = TRUE) %>% filter(! MarkerID %in% bim_mask_id)
+  meta_loco <- read.table(meta_loco_file, header = TRUE) %>% 
+      select(id = MarkerName, p.value = P.value)
+  meta_sex_loco = merge(meta_loco, bim, by = "id") %>% arrange(chr, pos) %>% filter(! id %in% bim_mask_id)
+  meta_noloco <- read.table(meta_noloco_file, header = TRUE) %>% 
+      select(id = MarkerName, p.value = P.value)
+  meta_sex_noloco = merge(meta_noloco, bim, by = "id") %>% arrange(chr, pos) %>% filter(! id %in% bim_mask_id)
+  causal_id = read.table(paste0("./sim_traits/rep_", rep_num, "/causal_id.txt"), 
+                         header = TRUE)
+  causal_markers = bim[causal_id$x,] %>% pull(id)
+  subset_bim = bim %>% filter(!id %in% bim_mask_id )
+  marker_indices = match(causal_markers, subset_bim$id)
+  # inflation values, srmsd, aucpr
+  srmsd_vals <- numeric()
+  inflation_vals <- numeric()
+  auc_vals <- numeric()
+
+  for (file in file_names) {
+    print(file)
+    file = get(file)
+    
+    srmsd <- pval_srmsd(file$p.value, marker_indices) 
+    srmsd_vals <- c(srmsd_vals, srmsd)
+    
+    inflation <- pval_infl(file$p.value) 
+    inflation_vals <- c(inflation_vals, inflation)
+    
+    auc <- pval_aucpr(file$p.value, marker_indices, curve = FALSE)
+    auc_vals <- c(auc_vals, auc)
+  }
+  analysis <- c("joint-loco", "joint", "sex-meta-loco", "sex-meta")
+  df <- data.frame(analysis, srmsd_vals, inflation_vals, auc_vals)
+  df$rep <- rep_num
+  combined_df = rbind(combined_df, df)
+}
+
+write.table(combined_df, "/home/tt207/pro00108518/hchs-sol/Ia/cryptic-relatedness/sim_traits/eval_metric_mask_1000000.txt",
+            col.names = TRUE, row.names = FALSE, quote = FALSE)
+combined_df = read.table("/home/tt207/pro00108518/hchs-sol/Ia/cryptic-relatedness/sim_traits/eval_metric_mask_1000000.txt", header = TRUE)
+```
+
+```{r}
+# load previously saved evaluation metrics
+samafs = read.table("samafs_eval_metric_mask_1000000.txt", header = TRUE)
+hchs = read.table("hchs_eval_metric_mask_1000000.txt", header = TRUE)
+
+combined_df = gdata::combine(samafs, hchs)
+
+long_df <- combined_df %>%
+  pivot_longer(
+    cols = c(srmsd_vals, inflation_vals, auc_vals),
+    names_to = "metric",
+    values_to = "value"
+  ) %>% 
+  mutate(
+    LOCO = grepl("loco", analysis),          # TRUE/FALSE
+    analysis = sub("-loco$", "", analysis)   # remove the suffix
+  ) %>% 
+  mutate(LOCO = ifelse(LOCO == TRUE, "used", "not used"))
+
+metric_labs <- c(
+  "auc_vals"       = "AUC",
+  "inflation_vals" = "Inflation Factor",
+  "srmsd_vals"     = "SRMSDp"
+)
+
+source_labs <- c(
+  "samafs"   = "SAMAFS",
+  "hchs" = "HCHS-SOL"
+)
+
+library(ggh4x)
+fig = ggplot(long_df, aes(x = analysis, y = value, fill = LOCO)) +
+  geom_boxplot(alpha = 0.4) +
+  labs(x = "Analysis", y = "Values", fill = "LOCO") +
+  theme_classic() +
+  facet_grid2(
+    rows = vars(source),
+    cols = vars(metric),
+    scales = "free_y",
+    independent = "y",   
+    labeller = labeller(
+      metric = as_labeller(metric_labs),
+      source = as_labeller(source_labs)
+    )
+  ) +
+  scale_fill_nejm() +
+  theme(legend.position = "top")
+
+ggsave(
+  filename = "simtrait_LOCO_mask.pdf",
+  plot = fig,
+  width = 8,
+  height = 6,
+  units = "in",
+  device = cairo_pdf
+)
+
+
+```
+
+
+
