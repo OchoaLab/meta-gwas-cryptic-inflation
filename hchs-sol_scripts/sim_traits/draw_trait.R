@@ -17,7 +17,7 @@ plink = read_plink("/data/irb/biostatisticsbioinformatics/pro00108518/hchs-sol/I
 X = plink$X
 kinship = read_grm("/data/irb/biostatisticsbioinformatics/pro00108518/hchs-sol/Ia/data_qc_popkin_rom")
 ##### draw trait
-m_causal <- 150
+m_causal <- 1000
 herit <- 0.8
 data_trait <- sim_trait(
   X,
@@ -29,10 +29,10 @@ data_trait <- sim_trait(
 )
 
 trait = data_trait$trait
-write.table(trait, paste0("./rep_", rep_num, "/sim_trait_150.txt"), col.names = FALSE, row.names = FALSE)
-write.table(data_trait$causal_indexes, paste0("./rep_", rep_num, "/causal_id_150.txt"), sep = " ", col.names = TRUE, row.names = FALSE)
+write.table(trait, paste0("./rep_", rep_num, "/sim_trait_", m_causal,".txt"), col.names = FALSE, row.names = FALSE)
+write.table(data_trait$causal_indexes, paste0("./rep_", rep_num, "/causal_id_", m_causal,".txt"), sep = " ", col.names = TRUE, row.names = FALSE)
 # causal coeff
-write.table(data_trait$causal_coeffs, paste0("./rep_", rep_num, "/causal_coeff_150.txt"), col.names = TRUE, row.names = FALSE, quote = FALSE)
+write.table(data_trait$causal_coeffs, paste0("./rep_", rep_num, "/causal_coeff_", m_causal, ".txt"), col.names = TRUE, row.names = FALSE, quote = FALSE)
 
 pheno = read.csv("/data/irb/biostatisticsbioinformatics/pro00108518/hchs-sol/Ia/heritability/hchs_phen.csv", header = TRUE)
 # read eigen
@@ -44,10 +44,10 @@ pheno <- pheno[ match( grm$fam$id, pheno$SUBJECT_ID ), ]
 pheno$PCs <- eigenvec$eigenvec
 
 # read sim_trait.txt and combine with phenofile
-simtrait = read.table(paste0("./rep_", rep_num, "/sim_trait_150.txt"), header = FALSE)$V1
+simtrait = read.table(paste0("./rep_", rep_num, "/sim_trait_", m_causal, ".txt"), header = FALSE)$V1
 pheno_simtrait = cbind(simtrait, pheno)
 covar <- pheno_simtrait %>%
   select(SUBJECT_ID, sex = GENDERNUM, simtrait, age = AGE, PCs) 
 
-write.table(covar, paste0("./rep_", rep_num, "/covar_simtrait_150.txt"), col.names = TRUE,
+write.table(covar, paste0("./rep_", rep_num, "/covar_simtrait_", m_causal, ".txt"), col.names = TRUE,
             row.names = FALSE, quote = FALSE)

@@ -28,7 +28,7 @@ rep_num=$((SLURM_ARRAY_TASK_ID))
 
 #### NO LOCO
 # Set the meta file name for the current trait
-meta_file="meta_sex_simtrait_noloco_${rep_num}_150.txt"
+meta_file="meta_sex_simtrait_noloco_${rep_num}_1000.txt"
 
 # Run the METAL command with the current meta file
 echo "Running METAL for ${meta_file}"

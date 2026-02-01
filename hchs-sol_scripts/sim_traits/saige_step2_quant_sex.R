@@ -21,21 +21,21 @@ chrom <- opt$chr
 
 dir = paste0("/data/irb/biostatisticsbioinformatics/pro00108518/hchs-sol/Ia/cryptic-relatedness/sim_traits/rep_", rep_num)
 print( 'saige step 2')
-phenoFile= paste0(dir, "/covar_simtrait_150.txt")
+phenoFile= paste0(dir, "/covar_simtrait_1000.txt")
 
 if(loco == 1){
   print('LOCO = TRUE')
   if (sex == "male") {
     plinkFile = "/data/irb/biostatisticsbioinformatics/pro00108518/hchs-sol/Ia/cryptic-relatedness/sex/data_qc_male"
-    GMMATmodelFile = paste0(dir, '/simtrait_quant_male_loco.rda') 
-    varianceRatioFile = paste0(dir, "/simtrait_quant_male_loco.varianceRatio.txt") 
-    SAIGEOutputFile = paste0(dir, "/saige_output_simtrait_male_loco_chr", chrom, ".txt") 
+    GMMATmodelFile = paste0(dir, '/simtrait_quant_male_loco_1000.rda') 
+    varianceRatioFile = paste0(dir, "/simtrait_quant_male_loco_1000.varianceRatio.txt") 
+    SAIGEOutputFile = paste0(dir, "/saige_output_simtrait_male_loco_1000_chr", chrom, ".txt") 
     
   } else {
     plinkFile = "/data/irb/biostatisticsbioinformatics/pro00108518/hchs-sol/Ia/cryptic-relatedness/sex/data_qc_female"
-    GMMATmodelFile = paste0(dir, '/simtrait_quant_female_loco.rda') 
-    varianceRatioFile = paste0(dir, "/simtrait_quant_female_loco.varianceRatio.txt") 
-    SAIGEOutputFile = paste0(dir, "/saige_output_simtrait_female_loco_chr", chrom, ".txt") 
+    GMMATmodelFile = paste0(dir, '/simtrait_quant_female_loco_1000.rda') 
+    varianceRatioFile = paste0(dir, "/simtrait_quant_female_loco_1000.varianceRatio.txt") 
+    SAIGEOutputFile = paste0(dir, "/saige_output_simtrait_female_loco_1000_chr", chrom, ".txt") 
   }
   
   print(GMMATmodelFile)
@@ -70,15 +70,15 @@ if(loco == 1){
     print('LOCO = FALSE')
     if (sex == "male") {
       plinkFile = "/data/irb/biostatisticsbioinformatics/pro00108518/hchs-sol/Ia/cryptic-relatedness/sex/data_qc_male"
-      GMMATmodelFile = paste0(dir, '/simtrait_quant_male_150.rda') 
-      varianceRatioFile = paste0(dir, "/simtrait_quant_male_150.varianceRatio.txt") 
-      SAIGEOutputFile = paste0(dir, "/saige_output_simtrait_male_150.txt") 
+      GMMATmodelFile = paste0(dir, '/simtrait_quant_male_1000.rda') 
+      varianceRatioFile = paste0(dir, "/simtrait_quant_male_1000.varianceRatio.txt") 
+      SAIGEOutputFile = paste0(dir, "/saige_output_simtrait_male_1000.txt") 
       
     } else {
       plinkFile = "/data/irb/biostatisticsbioinformatics/pro00108518/hchs-sol/Ia/cryptic-relatedness/sex/data_qc_female"
-      GMMATmodelFile = paste0(dir, '/simtrait_quant_female_150.rda') 
-      varianceRatioFile = paste0(dir, "/simtrait_quant_female_150.varianceRatio.txt") 
-      SAIGEOutputFile = paste0(dir, "/saige_output_simtrait_female_150.txt") 
+      GMMATmodelFile = paste0(dir, '/simtrait_quant_female_1000.rda') 
+      varianceRatioFile = paste0(dir, "/simtrait_quant_female_1000.varianceRatio.txt") 
+      SAIGEOutputFile = paste0(dir, "/saige_output_simtrait_female_1000.txt") 
     }
     
     print(GMMATmodelFile)

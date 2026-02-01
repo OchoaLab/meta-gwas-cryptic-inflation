@@ -18,7 +18,7 @@ loco <- opt$loco
 
 dir = paste0("/data/irb/biostatisticsbioinformatics/pro00108518/hchs-sol/Ia/cryptic-relatedness/sim_traits/rep_", rep_num)
 
-phenoFile= paste0(dir, "/covar_simtrait_150.txt")
+phenoFile= paste0(dir, "/covar_simtrait_1000.txt")
 print(phenoFile)
 covars=c("age", "PCs.1","PCs.2","PCs.3","PCs.4","PCs.5","PCs.6","PCs.7","PCs.8","PCs.9","PCs.10")
 phenoCol= "simtrait"
@@ -30,10 +30,10 @@ print('start saige step1')
 if(loco == 1){
   print('LOCO = TRUE')
   if (sex == "male") {
-    outputPrefix= paste0(dir, '/simtrait_quant_male_loco') 
+    outputPrefix= paste0(dir, '/simtrait_quant_male_loco_1000') 
     plinkFile = "/data/irb/biostatisticsbioinformatics/pro00108518/hchs-sol/Ia/cryptic-relatedness/sex/data_qc_male"
   } else {
-    outputPrefix= paste0(dir, '/simtrait_quant_female_loco') 
+    outputPrefix= paste0(dir, '/simtrait_quant_female_loco_1000') 
     plinkFile = "/data/irb/biostatisticsbioinformatics/pro00108518/hchs-sol/Ia/cryptic-relatedness/sex/data_qc_female"
   }
   print(plinkFile)
@@ -56,10 +56,10 @@ if(loco == 1){
 } else{
   print('LOCO = FALSE')
   if (sex == "male") {
-    outputPrefix= paste0(dir, '/simtrait_quant_male_150') 
+    outputPrefix= paste0(dir, '/simtrait_quant_male_1000') 
     plinkFile = "/data/irb/biostatisticsbioinformatics/pro00108518/hchs-sol/Ia/cryptic-relatedness/sex/data_qc_male"
   } else {
-    outputPrefix= paste0(dir, '/simtrait_quant_female_150') 
+    outputPrefix= paste0(dir, '/simtrait_quant_female_1000') 
     plinkFile = "/data/irb/biostatisticsbioinformatics/pro00108518/hchs-sol/Ia/cryptic-relatedness/sex/data_qc_female"
   }
   

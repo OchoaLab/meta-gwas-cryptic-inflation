@@ -4,7 +4,7 @@
 #SBATCH --output=s1noloco_male_150.out
 #SBATCH --account=pro00108518
 #SBATCH --mem=75G
-#SBATCH --array=1
+#SBATCH --array=1-10
 #SBATCH --ntasks-per-node=24
 #SBATCH --mail-user=tiffany.tu@duke.edu
 #SBATCH --mail-type=END,FAIL

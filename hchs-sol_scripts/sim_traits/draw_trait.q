@@ -2,7 +2,7 @@
 
 #SBATCH --job-name=%a_trait_sim
 #SBATCH --output=trait_sim_%a.out
-#SBATCH --array=1
+#SBATCH --array=1-10
 #SBATCH --account=pro00108518
 #SBATCH --mem=100G
 #SBATCH --ntasks-per-node=24
