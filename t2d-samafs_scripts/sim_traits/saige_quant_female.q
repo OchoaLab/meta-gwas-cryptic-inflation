@@ -6,7 +6,8 @@
 #SBATCH --ntasks-per-node=24
 #SBATCH --mail-user=tiffany.tu@duke.edu
 #SBATCH --mail-type=END,FAIL
-# rep_num=$((SLURM_ARRAY_TASK_ID))
+
+# For LOCO, set array to the chromosome number:
 # time Rscript saige_step1_quant_sex.R -s female -a "$rep_num" -l 1
 
 # chr_num=$((SLURM_ARRAY_TASK_ID))

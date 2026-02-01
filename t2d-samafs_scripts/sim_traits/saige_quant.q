@@ -8,10 +8,8 @@
 #SBATCH --mail-user=tiffany.tu@duke.edu
 #SBATCH --mail-type=END,FAIL
 
-# 
+# For LOCO, set array to the chromosome number:
 # chr_num=$((SLURM_ARRAY_TASK_ID))
-# 
-# # Run R scripts
 # echo "Running joint gwas"
 # #time Rscript saige_step1_quant.R -a "$rep_num" -l 1
 # for rep_num in {1..10}; do

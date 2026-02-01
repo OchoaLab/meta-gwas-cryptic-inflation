@@ -13,10 +13,11 @@ For this project, we evaluate confounding due to cryptic relatedness in genetic 
 - Sex stratified gwas: (`./sex/saige_quant.q` and `./sex/saige_binary.q`)
 - Sex-stratified meta-analysis: (`./METAL/meta_sex.q`)
 
-**Simulated traits with real data genotypes**
+**Simulated traits with real data genotypes**.   
 `t2d-samafs_scripts/sim_traits/` and `hchs-sol_scripts/sim_traits/`
-* `draw_trait.q`, `draw_trait.R`: draw simulated traits with m_causal = 1000 and heritability = 0.8. This script also creates covariate file with PCs for SAIGE
+* `draw_trait.q`, `draw_trait.R`: draw simulated traits with m_causal variants and heritability of 0.8. This script also creates covariate file with PCs for SAIGE
 * `causal_snp_masking.R`: masking causal SNPs with a window of 1000000 (can be adjusted)
 * `saige_quant.q`, `saige_quant_male_step1.q`, `saige_quant_male_step2.q`, `saige_quant_female_step1.q`, `saige_quant_female_step2.q` : option for LOCO or no LOCO
 * `combine_chrom_loco.q`: for LOCO results, outputs are written per chromosome and need to be combined before evaluation. 
 * `create_metal_file.q`, `meta_sex.q`: generate sex-meta analysis scripts for METAL and run sex-meta analysis
+* Final evaluation results/figures: `figures/simtrait_LOCO.Rmd`
