@@ -2,7 +2,7 @@ For this project, we evaluate confounding due to cryptic relatedness in genetic 
 We compare joint analysis, standard fixed-effects meta-analysis (METAL), and our novel method [metalcor](https://github.com/OchoaLab/metalcor/tree/main), which accounts for correlation between studies. 
 Additionally, using simulated kinship matrices, we show that the variance in between-study kinship values empirically scales with substudy sample size and increases with heritability and $F_{st}$. 
 
-##Folders
+## Folders
 - Simulated data results are in `sim_scripts` folder
 - Real data results
   - San Antonio Mexican American Family Studies (SAMAFS) Project 2 (dbGaP accession phs000847.v2.p1) : `t2d-samafs_scripts`
@@ -10,12 +10,12 @@ Additionally, using simulated kinship matrices, we show that the variance in bet
 - `figures` folder : scripts for generating manuscript figures
 - `data` folder : scripts & data for theory figures
 
-##Simulated data and real data analysis scripts
+## Simulated data and real data analysis scripts
 - Joint analysis: SAIGE (`saige_quant.q` and `saige_binary.q`)
 - Sex stratified gwas: (`./sex/saige_quant.q` and `./sex/saige_binary.q`)
 - Sex-stratified meta-analysis: (`./METAL/meta_sex.q` and `./metalcor/`)
 
-##Simulated traits with real data genotypes
+## Simulated traits with real data genotypes
 `t2d-samafs_scripts/sim_traits/` and `hchs-sol_scripts/sim_traits/`
 * `draw_trait.q`, `draw_trait.R`: draw simulated traits with m_causal variants and heritability of 0.8. This script also creates covariate file with PCs for SAIGE
 * `causal_snp_masking.R`: masking causal SNPs with a window of 1000000 (can be adjusted)
