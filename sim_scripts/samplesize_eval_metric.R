@@ -1,15 +1,17 @@
 library(tidyverse)
 library(simtrait)
 
+source('/hpc/group/ochoalab/tt207/meta_analysis_aim/new_method/meta_corr.R')
+
 setwd('/hpc/group/ochoalab/tt207/meta_analysis_aim')
 
 # METAL outputs are on a different filesystem root than the SAIGE outputs
 metal_root <- '/hpc/dctrl/tt207/meta_analysis_aim/METAL'
 
-# Evaluate sim4 across sample sizes N = 10000, 8000, 6000.
+# Evaluate sim4 across sample sizes N = 10000, 8000, 6000, 4000, 2000.
 # Causal SNP indices are the same across subsets, so always read from sim4_10000.
 N_list    <- c(10000, 8000, 6000, 4000, 2000)
-rep_list  <- 1:5
+rep_list  <- 1:3
 
 # Full SNP list (SAIGE drops some, so we left-join to fill in NAs)
 all_snps <- data.frame(CHR = 1, POS = 1:500000, MarkerID = 1:500000)
@@ -41,12 +43,30 @@ for (N in N_list) {
     df_male   <- read_table_check(paste0(rep_dir, '/sex/saige_output_', file_name, '_male_quant.txt'))
     df_female <- read_table_check(paste0(rep_dir, '/sex/saige_output_', file_name, '_female_quant.txt'))
 
-    # Meta analysis for sex
+    # Meta analysis for sex (METAL)
     meta_sex  <- read_table_check(paste0(metal_root, '/', sim_dir, '/output_sex_quant_', rep_num, '1.txt'))
     df_meta_sex <- if (!is.null(meta_sex)) {
       merge(meta_sex, all_snps, by.x = 'MarkerName', by.y = 'MarkerID', all.y = TRUE) %>%
         dplyr::rename(p.value = 'P.value') %>% arrange(MarkerName)
     } else NULL
+
+    # Meta-corr analysis
+    df_meta_sex_corr <- NULL
+    if (!is.null(df_male) && !is.null(df_female)) {
+      study_female <- df_female %>%
+        dplyr::select(id = MarkerID, chr = CHR, pos = POS, beta = BETA, se = SE, n = N)
+      study_male <- df_male %>%
+        dplyr::select(id = MarkerID, chr = CHR, pos = POS, beta = BETA, se = SE, n = N)
+
+      obj_metacorr <- meta_corr(list(study_female, study_male), median = TRUE)
+
+      df_meta_sex_corr <- data.frame(
+        MarkerID = obj_metacorr$assoc$id,
+        p.value  = obj_metacorr$assoc$p
+      ) %>%
+        merge(all_snps, by = 'MarkerID', all.y = TRUE) %>%
+        arrange(MarkerID)
+    }
 
     # Fill in missing SNPs
     complete_or_null <- function(df)
@@ -63,10 +83,11 @@ for (N in N_list) {
     causal_id <- read.table(causal_fn, header = TRUE)
 
     # Metrics per analysis
-    analyses <- list(joint        = df_all_complete,
-                     male         = df_male_complete,
-                     female       = df_female_complete,
-                     `sex-meta`   = df_meta_sex)
+    analyses <- list(joint             = df_all_complete,
+                     male              = df_male_complete,
+                     female            = df_female_complete,
+                     `sex-meta`        = df_meta_sex,
+                     `sex-meta-corr`   = df_meta_sex_corr)
 
     infl_pvals      <- numeric()
     infl_pvals_null <- numeric()
@@ -98,5 +119,9 @@ for (N in N_list) {
 }
 
 rownames(combined_df) <- NULL
-write.table(combined_df, './eval_tables/sim4_N10000_8000_6000_4000_2000quant.txt',
+dir.create('./eval_tables', showWarnings = FALSE)
+out_fn <- './eval_tables/sim4_N10000_8000_6000_4000_2000_quant_metacorr.txt'
+write.table(combined_df, out_fn,
             col.names = TRUE, row.names = FALSE, quote = FALSE)
+
+cat('Done. Wrote', out_fn, '\n')
