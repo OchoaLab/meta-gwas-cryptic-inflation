@@ -1,9 +1,9 @@
 ```{r}
 library(tidyverse)
-library(ggpubr)
 library(RColorBrewer)
-library("ggsci")
 library(genio)
+library(simtrait)
+library(metalcor)
 ```
 
 ```{r}
@@ -19,164 +19,233 @@ align_to_subset <- function(df, subset_bim, id_col, p_col) {
 }
 
 # Iterate over each rep
-file_names = c("joint_loco", "joint_noloco", "meta_sex_loco", "meta_sex_noloco")
+file_names = c("joint_loco", "joint_noloco", "meta_sex_loco", "meta_sex_noloco",
+               "metacorr_loco", "metacorr_noloco")
 combined_df = c()
 for (rep_num in 1:10){
   joint_loco_file <- paste0("./sim_traits/rep_", rep_num, "/saige_output_simtrait_loco.txt")
   joint_noloco_file <- paste0("./sim_traits/rep_", rep_num, "/saige_output_simtrait.txt")
-  meta_loco_file <- paste0("./sim_traits/metal/output/simtrait_loco_", rep_num, ".1txt") 
+  meta_loco_file <- paste0("./sim_traits/metal/output/simtrait_loco_", rep_num, ".1txt")
   meta_noloco_file <- paste0("./sim_traits/metal/output/simtrait_noloco_", rep_num, ".1txt")
   bim_mask_id_file <- paste0("./sim_traits/rep_", rep_num, "/bim_mask_id.txt")
-  # Read in the data
-  joint_loco <- read.table(joint_loco_file, header = TRUE)
-  joint_noloco <- read.table(joint_noloco_file, header = TRUE)
-  meta_loco <- read.table(meta_loco_file, header = TRUE) %>% 
-      select(id = MarkerName, p.value = P.value)
-  meta_sex_loco = merge(meta_loco, bim, by = "id") %>% arrange(chr, pos) # meta files are merged with bim
-  meta_noloco <- read.table(meta_noloco_file, header = TRUE) %>% 
-      select(id = MarkerName, p.value = P.value)
-  meta_sex_noloco = merge(meta_noloco, bim, by = "id") %>% arrange(chr, pos)
-  # causal snp id's
-  bim_mask_id <- read.table(bim_mask_id_file, header = TRUE) %>% pull(x)
-  subset_bim = bim %>% filter(!id %in% bim_mask_id )
-  causal_id = read.table(paste0("./sim_traits/rep_", rep_num, "/causal_id.txt"), 
-                         header = TRUE)
-  causal_markers = bim[causal_id$x,] %>% pull(id)
-  marker_indices = match(causal_markers, subset_bim$id)
-    if (anyNA(marker_indices)) {
-    bad <- causal_markers[is.na(marker_indices)]
-    stop("Some causal markers are missing from subset_bim after masking. Example: ",
-         paste(head(bad, 5), collapse = ", "),
-         " (n_missing=", sum(is.na(marker_indices)), ")")
-  }
-  # filter out masked id's
-  joint_loco_masked <- align_to_subset(joint_loco, subset_bim, "MarkerID", "p.value")
-  joint_noloco_masked <- align_to_subset(joint_noloco, subset_bim, "MarkerID", "p.value")
-  meta_sex_loco_masked <- align_to_subset(meta_sex_loco, subset_bim, "id", "p.value")
-  meta_sex_noloco_masked <- align_to_subset(meta_sex_noloco, subset_bim, "id", "p.value")
-  # inflation values, srmsd, aucpr
-  srmsd_vals <- numeric()
-  inflation_vals <- numeric() # includes all snps
-  auc_vals <- numeric()
 
-  for (file in file_names) {
-    print(file)
-    masked_df <- paste0(file, "_masked")
-    file <- get(file)
-    masked <- get(masked_df) # get df that excludes masked snps
-    
-    srmsd <- pval_srmsd(masked$p.value, marker_indices) 
-    srmsd_vals <- c(srmsd_vals, srmsd)
-    
-    auc <- pval_aucpr(masked$p.value, marker_indices, curve = FALSE)
-    auc_vals <- c(auc_vals, auc)
+  # Sex-stratified SAIGE outputs for meta_corr
+  male_loco_file <- paste0("./sim_traits/rep_", rep_num, "/saige_output_male_simtrait_loco.txt")
+  female_loco_file <- paste0("./sim_traits/rep_", rep_num, "/saige_output_female_simtrait_loco.txt")
+  male_noloco_file <- paste0("./sim_traits/rep_", rep_num, "/saige_output_simtrait_male.txt")
+  female_noloco_file <- paste0("./sim_traits/rep_", rep_num, "/saige_output_simtrait_female.txt")
 
-    inflation <- pval_infl(file$p.value) 
-    inflation_vals <- c(inflation_vals, inflation)
-    
-    # print(length(masked$p.value)) # check number of snps count for mask/unmasked
-    # print(length(file$p.value))
-    
-  }
-  analysis <- c("joint-loco", "joint", "sex-meta-loco", "sex-meta")
-  df <- data.frame(analysis, srmsd_vals, inflation_vals, auc_vals)
-  df$rep <- rep_num
-  combined_df = rbind(combined_df, df)
-}
-
-write.table(combined_df, 
-            "/home/tt207/pro00108518/t2d-samafs/study2/exome_chip/cryptic-relatedness/sim_traits/samafs_eval_metric_mask_1000000.txt",
-            col.names = TRUE, row.names = FALSE, quote = FALSE)
-```
-
-```{r}
-# calculate evaluation metrics for HCHS/SOL
-setwd("/home/tt207/pro00108518/hchs-sol/Ia/cryptic-relatedness/")
-bim = read_plink("/home/tt207/pro00108518/hchs-sol/Ia/data_qc")$bim
-
-align_to_subset <- function(df, subset_bim, id_col, p_col) {
-  idx <- match(subset_bim$id, df[[id_col]])
-  df_aligned <- df[idx, , drop = FALSE]
-  df_aligned$p.value <- df_aligned[[p_col]]
-  df_aligned
-}
-
-# Iterate over each rep
-file_names = c("joint_loco", "joint_noloco", "meta_loco", "meta_noloco")
-combined_df = c()
-for (rep_num in 1:10){
-  joint_loco_file <- paste0("./sim_traits/rep_", rep_num, "/saige_output_simtrait_loco_1000.txt")
-  joint_noloco_file <- paste0("./sim_traits/rep_", rep_num, "/saige_output_simtrait_1000.txt")
-  meta_loco_file <- paste0("./sim_traits/metal/output/simtrait_loco_", rep_num, "_1000.1txt") 
-  meta_noloco_file <- paste0("./sim_traits/metal/output/simtrait_noloco_", rep_num, "_1000.1txt")
-  bim_mask_id_file <- paste0("./sim_traits/rep_", rep_num, "/bim_mask_id_1000000_1000.txt")
   # Read in the data
   joint_loco <- read.table(joint_loco_file, header = TRUE)
   joint_noloco <- read.table(joint_noloco_file, header = TRUE)
   meta_loco <- read.table(meta_loco_file, header = TRUE) %>%
       select(id = MarkerName, p.value = P.value)
-  meta_sex_loco = merge(meta_loco, bim, by = "id") %>% arrange(chr, pos) # meta files are merged with bim
-  meta_noloco <- read.table(meta_noloco_file, header = TRUE) %>% 
+  meta_sex_loco = merge(meta_loco, bim, by = "id") %>% arrange(chr, pos)
+  meta_noloco <- read.table(meta_noloco_file, header = TRUE) %>%
       select(id = MarkerName, p.value = P.value)
   meta_sex_noloco = merge(meta_noloco, bim, by = "id") %>% arrange(chr, pos)
+
+  # Run meta_corr (LOCO)
+  df_male_loco <- read.table(male_loco_file, header = TRUE)
+  df_female_loco <- read.table(female_loco_file, header = TRUE)
+  study_male_loco <- df_male_loco %>%
+    dplyr::select(id = MarkerID, chr = CHR, pos = POS, beta = BETA, se = SE, n = N)
+  study_female_loco <- df_female_loco %>%
+    dplyr::select(id = MarkerID, chr = CHR, pos = POS, beta = BETA, se = SE, n = N)
+  obj_loco <- metalcor(list(study_female_loco, study_male_loco), median = TRUE)
+  metacorr_loco <- data.frame(id = obj_loco$assoc$id, p.value = obj_loco$assoc$p)
+  metacorr_loco <- merge(metacorr_loco, bim, by = "id") %>% arrange(chr, pos)
+
+  # Run meta_corr (no-LOCO)
+  df_male_noloco <- read.table(male_noloco_file, header = TRUE)
+  df_female_noloco <- read.table(female_noloco_file, header = TRUE)
+  study_male_noloco <- df_male_noloco %>%
+    dplyr::select(id = MarkerID, chr = CHR, pos = POS, beta = BETA, se = SE, n = N)
+  study_female_noloco <- df_female_noloco %>%
+    dplyr::select(id = MarkerID, chr = CHR, pos = POS, beta = BETA, se = SE, n = N)
+  obj_noloco <- metalcor(list(study_female_noloco, study_male_noloco), median = TRUE)
+  metacorr_noloco <- data.frame(id = obj_noloco$assoc$id, p.value = obj_noloco$assoc$p)
+  metacorr_noloco <- merge(metacorr_noloco, bim, by = "id") %>% arrange(chr, pos)
+
   # causal snp id's
   bim_mask_id <- read.table(bim_mask_id_file, header = TRUE) %>% pull(x)
-  subset_bim = bim %>% filter(!id %in% bim_mask_id )
-  causal_id = read.table(paste0("./sim_traits/rep_", rep_num, "/causal_id_1000.txt"), 
+  subset_bim = bim %>% filter(!id %in% bim_mask_id)
+  causal_id = read.table(paste0("./sim_traits/rep_", rep_num, "/causal_id.txt"),
                          header = TRUE)
   causal_markers = bim[causal_id$x,] %>% pull(id)
   marker_indices = match(causal_markers, subset_bim$id)
-    if (anyNA(marker_indices)) {
+  if (anyNA(marker_indices)) {
     bad <- causal_markers[is.na(marker_indices)]
     stop("Some causal markers are missing from subset_bim after masking. Example: ",
          paste(head(bad, 5), collapse = ", "),
          " (n_missing=", sum(is.na(marker_indices)), ")")
   }
+
   # filter out masked id's
   joint_loco_masked <- align_to_subset(joint_loco, subset_bim, "MarkerID", "p.value")
   joint_noloco_masked <- align_to_subset(joint_noloco, subset_bim, "MarkerID", "p.value")
   meta_sex_loco_masked <- align_to_subset(meta_sex_loco, subset_bim, "id", "p.value")
   meta_sex_noloco_masked <- align_to_subset(meta_sex_noloco, subset_bim, "id", "p.value")
+  metacorr_loco_masked <- align_to_subset(metacorr_loco, subset_bim, "id", "p.value")
+  metacorr_noloco_masked <- align_to_subset(metacorr_noloco, subset_bim, "id", "p.value")
+
   # inflation values, srmsd, aucpr
   srmsd_vals <- numeric()
-  inflation_vals <- numeric() # includes all snps
+  inflation_vals <- numeric()
   auc_vals <- numeric()
 
   for (file in file_names) {
     print(file)
     masked_df <- paste0(file, "_masked")
     file <- get(file)
-    masked <- get(masked_df) # get df that excludes masked snps
-    
-    srmsd <- pval_srmsd(masked$p.value, marker_indices) 
+    masked <- get(masked_df)
+
+    srmsd <- pval_srmsd(masked$p.value, marker_indices)
     srmsd_vals <- c(srmsd_vals, srmsd)
-    
+
     auc <- pval_aucpr(masked$p.value, marker_indices, curve = FALSE)
     auc_vals <- c(auc_vals, auc)
 
-    inflation <- pval_infl(file$p.value) 
+    inflation <- pval_infl(file$p.value)
     inflation_vals <- c(inflation_vals, inflation)
-    
-    # print(length(masked$p.value)) # check number of snps count for mask/unmasked
-    # print(length(file$p.value))
-    
   }
-  analysis <- c("joint-loco", "joint", "sex-meta-loco", "sex-meta")
+
+  analysis <- c("joint-loco", "joint", "sex-meta-loco", "sex-meta",
+                "sex-meta-corr-loco", "sex-meta-corr")
+  df <- data.frame(analysis, srmsd_vals, inflation_vals, auc_vals)
+  df$rep <- rep_num
+  combined_df = rbind(combined_df, df)
+}
+
+write.table(combined_df,
+            "/home/tt207/pro00108518/t2d-samafs/study2/exome_chip/cryptic-relatedness/sim_traits/samafs_eval_metric_mask_1000000_metacorr.txt",
+            col.names = TRUE, row.names = FALSE, quote = FALSE)
+```
+
+
+
+```{r}
+# calculate evaluation metrics for HCHS/SOL
+setwd("/home/tt207/pro00108518/hchs-sol/Ia/cryptic-relatedness/")
+# bim = read_plink("/home/tt207/pro00108518/hchs-sol/Ia/data_qc")$bim
+# 
+# align_to_subset <- function(df, subset_bim, id_col, p_col) {
+#   idx <- match(subset_bim$id, df[[id_col]])
+#   df_aligned <- df[idx, , drop = FALSE]
+#   df_aligned$p.value <- df_aligned[[p_col]]
+#   df_aligned
+# }
+# # 
+# # # Iterate over each rep
+# file_names = c("joint_loco", "joint_noloco", "meta_sex_loco", "meta_sex_noloco",
+#                "metacorr_loco", "metacorr_noloco")
+# combined_df = c()
+for (rep_num in 7){
+  print(paste("rep", rep_num))
+  joint_loco_file <- paste0("./sim_traits/rep_", rep_num, "/saige_output_simtrait_loco_1000.txt")
+  joint_noloco_file <- paste0("./sim_traits/rep_", rep_num, "/saige_output_simtrait_1000.txt")
+  meta_loco_file <- paste0("./sim_traits/metal/output/simtrait_loco_", rep_num, "_1000.1txt")
+  meta_noloco_file <- paste0("./sim_traits/metal/output/simtrait_noloco_", rep_num, "_1000.1txt")
+  bim_mask_id_file <- paste0("./sim_traits/rep_", rep_num, "/bim_mask_id_1000000_1000.txt")
+
+  # Sex-stratified SAIGE outputs for meta_corr
+  male_loco_file <- paste0("./sim_traits/rep_", rep_num, "/saige_output_male_simtrait_loco_1000.txt")
+  female_loco_file <- paste0("./sim_traits/rep_", rep_num, "/saige_output_female_simtrait_loco_1000.txt")
+  male_noloco_file <- paste0("./sim_traits/rep_", rep_num, "/saige_output_simtrait_male_1000.txt")
+  female_noloco_file <- paste0("./sim_traits/rep_", rep_num, "/saige_output_simtrait_female_1000.txt")
+
+  # Read in the data
+  joint_loco <- read.table(joint_loco_file, header = TRUE)
+  joint_noloco <- read.table(joint_noloco_file, header = TRUE)
+  meta_loco <- read.table(meta_loco_file, header = TRUE) %>%
+      select(id = MarkerName, p.value = P.value)
+  meta_sex_loco = merge(meta_loco, bim, by = "id") %>% arrange(chr, pos)
+  meta_noloco <- read.table(meta_noloco_file, header = TRUE) %>%
+      select(id = MarkerName, p.value = P.value)
+  meta_sex_noloco = merge(meta_noloco, bim, by = "id") %>% arrange(chr, pos)
+
+  # Run meta_corr (LOCO)
+  df_male_loco <- read.table(male_loco_file, header = TRUE, fill = TRUE)
+  df_female_loco <- read.table(female_loco_file, header = TRUE, fill = TRUE)
+  study_male_loco <- df_male_loco %>%
+    dplyr::select(id = MarkerID, chr = CHR, pos = POS, beta = BETA, se = SE, n = N)
+  study_female_loco <- df_female_loco %>%
+    dplyr::select(id = MarkerID, chr = CHR, pos = POS, beta = BETA, se = SE, n = N)
+  obj_loco <- metalcor(list(study_female_loco, study_male_loco), median = TRUE)
+  metacorr_loco <- data.frame(id = obj_loco$assoc$id, p.value = obj_loco$assoc$p)
+  metacorr_loco <- merge(metacorr_loco, bim, by = "id") %>% arrange(chr, pos)
+
+  # Run meta_corr (no-LOCO)
+  df_male_noloco <- read.table(male_noloco_file, header = TRUE, fill = TRUE)
+  df_female_noloco <- read.table(female_noloco_file, header = TRUE, fill = TRUE)
+  study_male_noloco <- df_male_noloco %>%
+    dplyr::select(id = MarkerID, chr = CHR, pos = POS, beta = BETA, se = SE, n = N)
+  study_female_noloco <- df_female_noloco %>%
+    dplyr::select(id = MarkerID, chr = CHR, pos = POS, beta = BETA, se = SE, n = N)
+  obj_noloco <- metalcor(list(study_female_noloco, study_male_noloco), median = TRUE)
+  metacorr_noloco <- data.frame(id = obj_noloco$assoc$id, p.value = obj_noloco$assoc$p)
+  metacorr_noloco <- merge(metacorr_noloco, bim, by = "id") %>% arrange(chr, pos)
+
+  # causal snp id's
+  bim_mask_id <- read.table(bim_mask_id_file, header = TRUE) %>% pull(x)
+  subset_bim = bim %>% filter(!id %in% bim_mask_id)
+  causal_id = read.table(paste0("./sim_traits/rep_", rep_num, "/causal_id_1000.txt"),
+                         header = TRUE)
+  causal_markers = bim[causal_id$x,] %>% pull(id)
+  marker_indices = match(causal_markers, subset_bim$id)
+  if (anyNA(marker_indices)) {
+    bad <- causal_markers[is.na(marker_indices)]
+    stop("Some causal markers are missing from subset_bim after masking. Example: ",
+         paste(head(bad, 5), collapse = ", "),
+         " (n_missing=", sum(is.na(marker_indices)), ")")
+  }
+
+  # filter out masked id's
+  joint_loco_masked <- align_to_subset(joint_loco, subset_bim, "MarkerID", "p.value")
+  joint_noloco_masked <- align_to_subset(joint_noloco, subset_bim, "MarkerID", "p.value")
+  meta_sex_loco_masked <- align_to_subset(meta_sex_loco, subset_bim, "id", "p.value")
+  meta_sex_noloco_masked <- align_to_subset(meta_sex_noloco, subset_bim, "id", "p.value")
+  metacorr_loco_masked <- align_to_subset(metacorr_loco, subset_bim, "id", "p.value")
+  metacorr_noloco_masked <- align_to_subset(metacorr_noloco, subset_bim, "id", "p.value")
+
+  # inflation values, srmsd, aucpr
+  srmsd_vals <- numeric()
+  inflation_vals <- numeric()
+  auc_vals <- numeric()
+
+  for (file in file_names) {
+    print(file)
+    masked_df <- paste0(file, "_masked")
+    file <- get(file)
+    masked <- get(masked_df)
+
+    srmsd <- pval_srmsd(masked$p.value, marker_indices)
+    srmsd_vals <- c(srmsd_vals, srmsd)
+
+    auc <- pval_aucpr(masked$p.value, marker_indices, curve = FALSE)
+    auc_vals <- c(auc_vals, auc)
+
+    inflation <- pval_infl(file$p.value)
+    inflation_vals <- c(inflation_vals, inflation)
+  }
+
+  analysis <- c("joint-loco", "joint", "sex-meta-loco", "sex-meta",
+                "sex-meta-corr-loco", "sex-meta-corr")
   df <- data.frame(analysis, srmsd_vals, inflation_vals, auc_vals)
   df$rep <- rep_num
   df$causal_snp <- 1000
   combined_df = rbind(combined_df, df)
 }
 
-write.table(combined_df, 
-            "/home/tt207/pro00108518/hchs-sol/Ia/cryptic-relatedness/sim_traits/hchs_eval_metric_mask_1000000_causal_1000.txt",
+write.table(combined_df,
+            "/home/tt207/pro00108518/hchs-sol/Ia/cryptic-relatedness/sim_traits/hchs_eval_metric_mask_1000000_causal_1000_metacorr.txt",
             col.names = TRUE, row.names = FALSE, quote = FALSE)
 ```
 
 ```{r}
 # load previously saved evaluation metrics
-samafs = read.table("samafs_eval_metric_mask_1000000.txt", header = TRUE)
-hchs = read.table("hchs_eval_metric_mask_1000000_causal_1000.txt", header = TRUE) %>% select(-causal_snp)
+samafs = read.table("/home/tt207/pro00108518/t2d-samafs/study2/exome_chip/cryptic-relatedness/sim_traits/samafs_eval_metric_mask_1000000_metacorr.txt", header = TRUE)
+hchs = read.table("/home/tt207/pro00108518/hchs-sol/Ia/cryptic-relatedness/sim_traits/hchs_eval_metric_mask_1000000_causal_1000_metacorr.txt", header = TRUE) %>% select(-causal_snp)
 
 combined_df = gdata::combine(samafs, hchs)
 
@@ -185,11 +254,11 @@ long_df <- combined_df %>%
     cols = c(srmsd_vals, inflation_vals, auc_vals),
     names_to = "metric",
     values_to = "value"
-  ) %>% 
+  ) %>%
   mutate(
-    LOCO = grepl("loco", analysis),          # TRUE/FALSE
-    analysis = sub("-loco$", "", analysis)   # remove the suffix
-  ) %>% 
+    LOCO = grepl("loco", analysis),
+    analysis = sub("-loco$", "", analysis)
+  ) %>%
   mutate(LOCO = ifelse(LOCO == TRUE, "used", "not used"))
 
 metric_labs <- c(
@@ -199,8 +268,8 @@ metric_labs <- c(
 )
 
 source_labs <- c(
-  "samafs"   = "SAMAFS",
-  "hchs" = "HCHS-SOL"
+  "samafs" = "SAMAFS",
+  "hchs"   = "HCHS/SOL"
 )
 
 library(ggh4x)
@@ -212,25 +281,29 @@ fig = ggplot(long_df, aes(x = analysis, y = value, fill = LOCO)) +
     rows = vars(source),
     cols = vars(metric),
     scales = "free_y",
-    independent = "y",   
+    independent = "y",
     labeller = labeller(
       metric = as_labeller(metric_labs),
       source = as_labeller(source_labs)
     )
   ) +
-  scale_fill_nejm() +
-  theme(legend.position = "top")
+  scale_fill_manual(values = c("not used" = "#00BFC4", "used" = "#F8766D")) +
+  theme(
+    legend.position = "top",
+    strip.text = element_text(size = 12),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    panel.spacing = unit(0.3, "cm"),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 0.8),
+    axis.line = element_blank()
+  )
 
 ggsave(
-  filename = "simtrait_LOCO_mask.pdf",
+  filename = "/home/tt207/cryptic-relatedness/simtrait_LOCO_mask_metacorr.pdf",
   plot = fig,
-  width = 8,
+  width = 12,
   height = 6,
   units = "in",
   device = cairo_pdf
 )
-
 ```
-
-
-

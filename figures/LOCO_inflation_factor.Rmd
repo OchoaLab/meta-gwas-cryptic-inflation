@@ -1,118 +1,167 @@
 ```{r}
 library(tidyverse)
-library(dplyr)
-library(tidyr)
 library(ggplot2)
-library(ggpubr)
+library(gdata)
+library(ggnewscale)
 ```
 
 ```{r}
-# load data for samafs
-samafs_loco = read.table("samafs_inflation_factor_loco.txt", header = TRUE)
-samafs_no_loco = read.table("samafs_inflation_factor_data.txt", header = TRUE)
-# load data for hchs_sol
-hchs_loco = read.table("hchs_inflation_factor_loco.txt", header = TRUE)
-hchs_no_loco = read.table("hchs_inflation_factor_data.txt", header = TRUE)
+# LOCO data (with metacorr)
+samafs_loco <- read.table("samafs_inflation_factor_loco_metacorr.txt", header = TRUE)
+hchs_loco <- read.table("hchs-sol-inflation_factor_loco_metacorr.txt", header = TRUE)
 
-df_loco = gdata::combine(SAMAFS = samafs_loco, "HCHS/SOL" = hchs_loco)
-df_no_loco = gdata::combine(SAMAFS = samafs_no_loco, "HCHS/SOL" = hchs_no_loco)
+# Non-LOCO data (with metacorr)
+samafs_no_loco <- read.table("samafs_inflation_factor_data_metacorr.txt", header = TRUE)
+hchs_no_loco <- read.table("hchs-sol-inflation_factor_data_metacorr.txt", header = TRUE)
+
+df_loco <- gdata::combine(SAMAFS = samafs_loco, "HCHS/SOL" = hchs_loco) 
+df_no_loco <- gdata::combine(SAMAFS = samafs_no_loco, "HCHS/SOL" = hchs_no_loco) %>% distinct()
 ```
 
+# Figure A: Joint vs method inflation factor, colored by LOCO, faceted by dataset
+# Two rows: sex-meta, sex-meta-corr
 ```{r}
 combine_lambda_A <- merge(df_no_loco, df_loco, by = c("trait", "source")) %>%
   pivot_longer(
-    cols =  -c('trait','source'),
+    cols = c(joint_lambda, meta_lambda, metacorr_lambda,
+             joint_loco_lambda, meta_loco_lambda, metacorr_loco_lambda),
     names_to = c("method", "LOCO"),
-    names_pattern = "(joint|meta)_(loco)?_?lambda",
+    names_pattern = "(joint|meta|metacorr)_(loco_)?lambda",
     values_to = "lambda"
   ) %>%
-  mutate(LOCO = ifelse(LOCO == "loco", "used", "not used")) %>%
+  mutate(LOCO = ifelse(LOCO == "loco_", "used", "not used")) %>%
   pivot_wider(
     names_from = method,
     values_from = lambda,
     names_glue = "{method}_lambda"
   )
 
-figA <- ggplot(combine_lambda_A, aes(x = joint_lambda, y = meta_lambda)) +
-  geom_abline(slope = 1, intercept = 0,
-              linetype = "dashed", color = "navy", size = 1,
-              show.legend = FALSE) +
+# Reshape for faceting: one row per (trait, source, LOCO, y_method)
+df_A <- combine_lambda_A %>%
+  pivot_longer(
+    cols = c(meta_lambda, metacorr_lambda),
+    names_to = "y_method",
+    values_to = "y_lambda"
+  ) %>%
+  mutate(y_method = case_when(
+    y_method == "meta_lambda" ~ "sex-meta",
+    y_method == "metacorr_lambda" ~ "sex-meta-corr"
+  ))
+
+df_A$y_method <- factor(df_A$y_method,
+                        levels = c("sex-meta",
+                                   "sex-meta-corr"))
+```
+
+```{r fig.width=7, fig.height=8}
+figA <- ggplot(df_A, aes(x = joint_lambda, y = y_lambda)) +
   geom_vline(xintercept = 1.05,
-             linetype = "solid", color = "gray", size = 1,
+             linetype = "solid", color = "gray", linewidth = 1,
              show.legend = FALSE) +
   geom_hline(yintercept = 1.05,
-             linetype = "solid", color = "gray", size = 1,
+             linetype = "solid", color = "gray", linewidth = 1,
              show.legend = FALSE) +
+    geom_abline(slope = 1, intercept = 0,
+              linetype = "dashed", color = "darkblue", linewidth = 1,
+              show.legend = FALSE) +
   ggnewscale::new_scale_color() +
-  geom_point(aes(color = factor(LOCO),  alpha = 0.9), size = 1.5) +
+  geom_point(aes(color = factor(LOCO), alpha = 0.9), size = 1.5) +
   scale_color_discrete(name = "LOCO") +
   guides(alpha = "none") +
   coord_equal() +
+  facet_grid(rows = vars(y_method), cols = vars(source)) +
   labs(
     x = "Joint analysis inflation factor",
-    y = "Sex-stratified meta-analysis inflation factor"
+    y = "Sex-stratified analysis inflation factor"
   ) +
   theme_classic() +
-  facet_wrap(~ source) +
-  theme(legend.position = "top",
+  theme(
+    legend.position = "top",
+    legend.text = element_text(size = 10),
+    strip.text = element_text(size = 12),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10),
     aspect.ratio = 1,
-    panel.spacing = unit(0.4, "cm"))
+    panel.spacing = unit(0.3, "cm"),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 0.8),
+    axis.line = element_blank()
+  )
+
+figA
 
 ggsave(
-  filename = "supp_figA.pdf",
+  filename = "supp_figA_metacorr.pdf",
   plot = figA,
   width = 7,
-  height = 5,
+  height = 8,
   units = "in",
   device = cairo_pdf
 )
 ```
 
+# Figure B: No-LOCO vs LOCO inflation factor, colored by method, faceted by dataset
+# Now with 3 methods: joint, sex-meta, sex-meta-corr
 ```{r}
-combine_lambda_B = merge(df_no_loco, df_loco, by = c("trait", "source")) %>% 
+combine_lambda_B <- merge(df_no_loco, df_loco, by = c("trait", "source")) %>%
   pivot_longer(
-    cols = -c('trait','source'),
+    cols = c(joint_lambda, meta_lambda, metacorr_lambda,
+             joint_loco_lambda, meta_loco_lambda, metacorr_loco_lambda),
     names_to = c("method", "LOCO"),
-    names_pattern = "(joint|meta)(_loco)?_lambda",
+    names_pattern = "(joint|meta|metacorr)_(loco_)?lambda",
     values_to = "lambda"
   ) %>%
   mutate(
-    LOCO = ifelse(LOCO == "_loco", "loco", "no_loco"),
-    method = ifelse(method == "meta", "sex-meta", method)
+    LOCO = ifelse(LOCO == "loco_", "loco", "no_loco"),
+    method = case_when(
+      method == "joint" ~ "joint",
+      method == "meta" ~ "sex-meta",
+      method == "metacorr" ~ "sex-meta-corr"
+    )
   ) %>%
   pivot_wider(
     names_from = LOCO,
     values_from = lambda
   )
+```
 
-figB = ggplot(combine_lambda_B, aes(x = no_loco, y = loco)) +
-  # LOCO points with first color scale
-  geom_point(aes(color = method, alpha = 0.9)) + 
-  scale_color_discrete(name = "Analysis") +
+```{r fig.width=7, fig.height=5}
+figB <- ggplot(combine_lambda_B, aes(x = no_loco, y = loco)) +
+  geom_vline(xintercept = 1.05,
+             linetype = "solid", color = "gray", linewidth = 1,
+             show.legend = FALSE) +
+  geom_hline(yintercept = 1.05,
+             linetype = "solid", color = "gray", linewidth = 1,
+             show.legend = FALSE) +
+    geom_abline(slope = 1, intercept = 0,
+              linetype = "dashed", color = "darkblue", linewidth = 1,
+              show.legend = FALSE) +
+  geom_point(aes(color = method, alpha = 0.9), size = 1.5) +
+  scale_color_manual(name = "Analysis",
+                     values = c("joint" = "#F8766D", "sex-meta" = "#619CFF", "sex-meta-corr" = "#00BA38")) +
   guides(alpha = "none") +
-  ggnewscale::new_scale_color() +
-  geom_abline(
-    intercept = 0, slope = 1,
-    linetype = "dashed",
-    color = "navy",
-    size = 1,
-    show.legend = FALSE
-  ) +
   facet_wrap(~ source) +
   coord_equal() +
   labs(
-    x = "Original inflation factor", 
+    x = "Original inflation factor",
     y = "LOCO inflation factor"
   ) +
   theme_classic() +
   theme(
     legend.position = "top",
+    legend.text = element_text(size = 10),
+    strip.text = element_text(size = 12),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10),
     aspect.ratio = 1,
-    panel.spacing = unit(0.4, "cm")
+    panel.spacing = unit(0.3, "cm"),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 0.8),
+    axis.line = element_blank()
   )
 
+figB
+
 ggsave(
-  filename = "supp_figB.pdf",
+  filename = "supp_figB_metacorr.pdf",
   plot = figB,
   width = 7,
   height = 5,
@@ -120,5 +169,3 @@ ggsave(
   device = cairo_pdf
 )
 ```
-
-
