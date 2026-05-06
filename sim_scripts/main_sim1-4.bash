@@ -53,3 +53,6 @@ time Rscript gc-overcorrection-example.R
 fig=../data/gc-overcorrection-example.pdf
 pdf2png $fig
 rm $fig
+
+# plot relationship between "prodcor" median and correlation param
+time Rscript plot-median-to-rho.R
