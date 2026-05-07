@@ -2,91 +2,143 @@
 library(tidyverse)
 library(qqman)
 library(simtrait)
+library(metalcor)
+library(cowplot)
 ```
 
-Select top 3 most inflated traits from each dataset to visualize qqplots
-```{r fig.width=8, fig.height=6}
-make_qq_df <- function(pvals, label, trait_name) {
+Top 3 most inflated traits from each dataset to visualize qqplots.
+Run `realdata_qqplot_samafs_pvals.R` on RCC cluster to extract SAMAFS joint + metalcor p-values.
+Transfer `samafs_qqplot_pvals.txt` to DCC.
+```{r fig.width=9, fig.height=6}
+make_qq_df <- function(pvals, analysis, trait_name) {
   pvals <- pvals[!is.na(pvals)]
   n <- length(pvals)
   data.frame(
     expected = -log10(ppoints(n)),
     observed = -log10(sort(pvals)),
-    type = label,
+    analysis = analysis,
     trait = trait_name
   )
 }
 
-## HCHS-SOL data
-# For trait A
-meta_file <- paste0("/hpc/dctrl/tt207/meta_analysis_aim/METAL/hchs-sol/output_metal_sex_HEIGHT_trait1.txt")
-meta <- read.table(meta_file, header = TRUE)
-traitA_raw <- make_qq_df(meta$P.value, "Raw", "Height")
-traitA_gc  <- make_qq_df(pval_gc(meta$P.value)$pvals, "GC-adjusted", "Height")
+# Helper: run metalcor on male/female SAIGE files, return p-values
+run_metacorr <- function(male_file, female_file) {
+  df_male <- read.table(male_file, header = TRUE)
+  df_female <- read.table(female_file, header = TRUE)
+  study_male <- df_male %>%
+    dplyr::select(id = MarkerID, chr = CHR, pos = POS, beta = BETA, se = SE, n = N)
+  study_female <- df_female %>%
+    dplyr::select(id = MarkerID, chr = CHR, pos = POS, beta = BETA, se = SE, n = N)
+  obj <- metalcor(list(study_female, study_male), median = TRUE)
+  obj$assoc$p
+}
 
-# For trait B
-meta_file <- paste0("/hpc/dctrl/tt207/meta_analysis_aim/METAL/hchs-sol/output_metal_sex_LOG_BMI_trait1.txt")
-meta <- read.table(meta_file, header = TRUE)
-traitB_raw <- make_qq_df(meta$P.value, "Raw", "BMI")
-traitB_gc  <- make_qq_df(pval_gc(meta$P.value)$pvals, "GC-adjusted", "BMI")
+## SAMAFS data — read pre-computed joint + metalcor p-values from /home/tt207 cluster
+samafs_pvals <- read.table("/hpc/dctrl/tt207/meta_analysis_aim/samafs_qqplot_pvals.txt", header = TRUE, sep = "\t")
+samafs_metal_dir <- "/hpc/dctrl/tt207/meta_analysis_aim/METAL/samafs"
 
-# For trait C
-meta_file <- paste0("/hpc/dctrl/tt207/meta_analysis_aim/METAL/hchs-sol/output_metal_sex_LOG_ANTA4_trait1.txt")
-meta <- read.table(meta_file, header = TRUE)
-traitC_raw <- make_qq_df(meta$P.value, "Raw", "Weight")
-traitC_gc  <- make_qq_df(pval_gc(meta$P.value)$pvals, "GC-adjusted", "Weight")
+samafs_traits <- list(
+  BMI    = "LOG_bmi_trait_age",
+  Weight = "LOG_weight_trait_age",
+  "Waist circumference" = "LOG_waistc_trait_age"
+)
 
-# Combine all
-df_hchssol <- rbind(traitA_raw, traitA_gc, traitB_raw, traitB_gc, traitC_raw, traitC_gc)
-df_hchssol$cohort <- "HCHS/SOL"
+df_samafs <- data.frame()
+for (trait_label in names(samafs_traits)) {
+  trait_code <- samafs_traits[[trait_label]]
+  joint_p <- samafs_pvals %>% filter(trait == trait_label, analysis == "joint") %>% pull(p)
+  mc_p    <- samafs_pvals %>% filter(trait == trait_label, analysis == "metacorr") %>% pull(p)
+  meta <- read.table(paste0(samafs_metal_dir, "/output_metal_sex_", trait_code, "1.txt"), header = TRUE)
 
-## SAMAFS data
-# For trait A
-meta_file <- paste0("/hpc/dctrl/tt207/meta_analysis_aim/METAL/samafs/output_metal_sex_LOG_bmi_trait_age1.txt")
-meta <- read.table(meta_file, header = TRUE)
-traitA_raw <- make_qq_df(meta$P.value, "Raw", "BMI")
-traitA_gc  <- make_qq_df(pval_gc(meta$P.value)$pvals, "GC-adjusted", "BMI")
+  df_samafs <- rbind(df_samafs,
+    make_qq_df(joint_p, "Joint", trait_label),
+    make_qq_df(meta$P.value, "Sex-meta", trait_label),
+    make_qq_df(pval_gc(meta$P.value)$pvals, "Sex-meta-GC", trait_label),
+    make_qq_df(mc_p, "Sex-meta-corr", trait_label)
+  )
+}
+## HCHS/SOL data — all files on /hpc/dctrl
+hchs_saige_dir <- "/hpc/dctrl/tt207/meta_analysis_aim/hchs-sol/saige"
+hchs_metal_dir <- "/hpc/dctrl/tt207/meta_analysis_aim/METAL/hchs-sol"
 
-# For trait B
-meta_file <- paste0("/hpc/dctrl/tt207/meta_analysis_aim/METAL/samafs/output_metal_sex_LOG_weight_trait_age1.txt")
-# Read in the data
-meta <- read.table(meta_file, header = TRUE)
-traitB_raw <- make_qq_df(meta$P.value, "Raw", "Weight")
-traitB_gc  <- make_qq_df(pval_gc(meta$P.value)$pvals, "GC-adjusted", "Weight")
+# Height
+joint <- read.table(paste0(hchs_saige_dir, "/saige_output_HEIGHT.txt"), header = TRUE)
+meta  <- read.table(paste0(hchs_metal_dir, "/output_metal_sex_HEIGHT_trait1.txt"), header = TRUE)
+mc_p  <- run_metacorr(paste0(hchs_saige_dir, "/saige_output_HEIGHT_male.txt"),
+                       paste0(hchs_saige_dir, "/saige_output_HEIGHT_female.txt"))
+hchs_A <- rbind(make_qq_df(joint$p.value, "Joint", "Height"),
+                make_qq_df(meta$P.value, "Sex-meta", "Height"),
+                make_qq_df(pval_gc(meta$P.value)$pvals, "Sex-meta-GC", "Height"),
+                make_qq_df(mc_p, "Sex-meta-corr", "Height"))
 
-# For trait C
-meta_file <- paste0("/hpc/dctrl/tt207/meta_analysis_aim/METAL/samafs/output_metal_sex_LOG_waistc_trait_age1.txt")
-# Read in the data
-meta <- read.table(meta_file, header = TRUE)
-traitC_raw <- make_qq_df(meta$P.value, "Raw", "Waist circumference")
-traitC_gc  <- make_qq_df(pval_gc(meta$P.value)$pvals, "GC-adjusted", "Waist circumference")
+# BMI
+joint <- read.table(paste0(hchs_saige_dir, "/saige_output_LOG_BMI.txt"), header = TRUE)
+meta  <- read.table(paste0(hchs_metal_dir, "/output_metal_sex_LOG_BMI_trait1.txt"), header = TRUE)
+mc_p  <- run_metacorr(paste0(hchs_saige_dir, "/saige_output_LOG_BMI_male.txt"),
+                       paste0(hchs_saige_dir, "/saige_output_LOG_BMI_female.txt"))
+hchs_B <- rbind(make_qq_df(joint$p.value, "Joint", "BMI"),
+                make_qq_df(meta$P.value, "Sex-meta", "BMI"),
+                make_qq_df(pval_gc(meta$P.value)$pvals, "Sex-meta-GC", "BMI"),
+                make_qq_df(mc_p, "Sex-meta-corr", "BMI"))
 
-# Combine all
-df_samafs <- rbind(traitA_raw, traitA_gc, traitB_raw, traitB_gc, traitC_raw, traitC_gc)
-df_samafs$cohort <- "SAMAFS"
+# Weight
+joint <- read.table(paste0(hchs_saige_dir, "/saige_output_LOG_ANTA4.txt"), header = TRUE)
+meta  <- read.table(paste0(hchs_metal_dir, "/output_metal_sex_LOG_ANTA4_trait1.txt"), header = TRUE)
+mc_p  <- run_metacorr(paste0(hchs_saige_dir, "/saige_output_LOG_ANTA4_male.txt"),
+                       paste0(hchs_saige_dir, "/saige_output_LOG_ANTA4_female.txt"))
+hchs_C <- rbind(make_qq_df(joint$p.value, "Joint", "Weight"),
+                make_qq_df(meta$P.value, "Sex-meta", "Weight"),
+                make_qq_df(pval_gc(meta$P.value)$pvals, "Sex-meta-GC", "Weight"),
+                make_qq_df(mc_p, "Sex-meta-corr", "Weight"))
+
+df_hchssol <- rbind(hchs_A, hchs_B, hchs_C)
+
+## Combine into one dataframe with panel label (dataset + trait)
+df_samafs$dataset <- "SAMAFS"
+df_hchssol$dataset <- "HCHS/SOL"
 df_all <- rbind(df_samafs, df_hchssol)
-df_all$cohort <- factor(df_all$cohort, levels = c("SAMAFS", setdiff(unique(df_all$cohort), "SAMAFS")))
-df_all$type <- factor(df_all$type, levels = c("Raw", "GC-adjusted"))
+df_all$analysis <- factor(df_all$analysis, levels = c("Joint", "Sex-meta", "Sex-meta-corr", "Sex-meta-GC"))
+df_all <- df_all[order(df_all$analysis), ] 
+print(table(df_all$analysis))  # verify all 4 levels have data
 
-# Plot with facets
-ggplot(df_all, aes(x = expected, y = observed, color = type)) +
-  geom_point(size = 0.8, alpha = 0.7) +
+# Combined facet label: "SAMAFS\nBMI", etc. — ordered so SAMAFS row first
+df_all$panel <- paste0(df_all$dataset, "\n", df_all$trait)
+panel_order <- c(
+  paste0("SAMAFS\n", c("BMI", "Waist circumference", "Weight")),
+  paste0("HCHS/SOL\n", c("BMI", "Height", "Weight"))
+)
+df_all$panel <- factor(df_all$panel, levels = panel_order)
+
+analysis_colors <- c("Joint" = "#F8766D", "Sex-meta" = "#619CFF",
+                     "Sex-meta-corr" = "#00BA38", "Sex-meta-GC" = "gold")
+analysis_alphas <- c("Joint" = 0.5, "Sex-meta" = 0.5,
+                     "Sex-meta-corr" = 0.5, "Sex-meta-GC" = 0.5)
+
+fig <- ggplot(df_all, aes(x = expected, y = observed, color = analysis, alpha = analysis)) +
+  geom_point(size = 0.8) +
   geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "gray50") +
-  facet_wrap(
-    cohort ~ trait,  # combines cohort and trait into unique facet labels
-    nrow = 2,
-    scales = "free"
-  ) +
-  labs(
-    x = expression(Expected~~-log[10](italic(p))),
-    y = expression(Observed~~-log[10](italic(p))),
-    color = "P-value Type"
-  ) +
+  facet_wrap(~ panel, scales = "free", nrow = 2) +
+  scale_color_manual(values = analysis_colors, name = "Analysis") +
+  scale_alpha_manual(values = analysis_alphas, name = "Analysis") +
+  guides(color = guide_legend(override.aes = list(size = 2, alpha = 1))) +
+  labs(x = expression(Expected~~-log[10](italic(p))),
+       y = expression(Observed~~-log[10](italic(p)))) +
   theme_classic() +
   theme(
-    strip.text = element_text(size = 9)
-  ) +
-  theme(legend.position = "top") + scale_color_brewer(palette = "Set1")
+    strip.text = element_text(size = 9),
+    legend.position = "top",
+    panel.spacing = unit(0.3, "cm"),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 0.8),
+    axis.line = element_blank()
+  )
+fig
+
+ggsave(
+  filename = "realdata_sex-meta_GC.png",
+  plot = fig,
+  width = 9,
+  height = 6,
+  units = "in",
+  dpi = 300
+)
 ```
-
-
