@@ -46,6 +46,9 @@ mkdir ./METAL/sim4_h08
 
 # investigation of LMM theoretical factors
 time Rscript eff-sample-size.R
+# and dependence mean kinship and population and sample sizes
+time Rscript mean-kinship-pop-sample-sizes.R
+# 32m58.977s thinkpad-e16
 
 # simulated high polygenicity and high power p-values, to demonstrate GC overcorrection
 time Rscript gc-overcorrection-example.R
